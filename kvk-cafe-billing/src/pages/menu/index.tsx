@@ -55,7 +55,7 @@ interface MealItem {
   facts: string;
   includes: string[];
   preparationTimeInMinutes: number;
-  portion: string;
+  portionSize: string;
 }
 
 interface FormData {
@@ -70,7 +70,7 @@ interface FormData {
 
   includes: string[];
   preparationTimeInMinutes: string;
-  portion: string;
+  portionSize: string;
 }
 
 const ingredientOptions = [
@@ -98,7 +98,7 @@ const emptyForm: FormData = {
   ingredients: [],
   includes: [],
   preparationTimeInMinutes: "",
-  portion: "",
+  portionSize: "",
 };
 
 type AlertState = {
@@ -251,7 +251,7 @@ export default function MenuPage() {
 
         includes: [],
         preparationTimeInMinutes: "",
-        portion: "",
+        portionSize: "",
       });
     } else {
       const meal = item as MealItem;
@@ -269,7 +269,7 @@ export default function MenuPage() {
         includes: meal.includes ?? [],
         preparationTimeInMinutes:
           meal.preparationTimeInMinutes?.toString() ?? "",
-        portion: meal.portion ?? "",
+        portionSize: meal.portionSize ?? "",
       });
     }
 
@@ -445,7 +445,7 @@ export default function MenuPage() {
 
       data.append(
         "portionSize",
-        formData.portion?.trim() || "0",
+        formData.portionSize?.trim() || "0",
       );
     }
 
@@ -512,7 +512,7 @@ export default function MenuPage() {
 
     if (
       activeTab === "meals" &&
-      !formData.portion.trim()
+      !formData.portionSize.trim()
     ) {
       setPageAlert({
         visible: true,
@@ -1031,7 +1031,7 @@ export default function MenuPage() {
                           <input
                             type="text"
                             value={
-                              formData.portion
+                              formData.portionSize
                             }
                             onChange={(e) =>
                               setFormData(
@@ -1735,7 +1735,7 @@ function MealTable({
 
             <td className="px-5 py-4">
               <span className="rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs font-medium text-[#7A3E18]">
-                {item.portion || "—"}
+                {item.portionSize || "—"}
               </span>
             </td>
 
@@ -1922,7 +1922,7 @@ function MealMobileCards({
                 </span>
 
                 <span className="rounded-md bg-amber-50 px-2 py-1 text-[11px] text-[#7A3E18]">
-                  {item.portion ||
+                  {item.portionSize ||
                     "—"}
                 </span>
               </div>
