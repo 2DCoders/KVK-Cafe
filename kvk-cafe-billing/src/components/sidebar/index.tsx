@@ -76,10 +76,10 @@ export default function Sidebar({
 
   const navItems: NavItem[] = [
     {
-      id: "services",
-      label: "Services",
+      id: "menu",
+      label: "Menu",
       icon: Coffee,
-      path: "/services",
+      path: "/menu",
       submenu: null,
     },
     {

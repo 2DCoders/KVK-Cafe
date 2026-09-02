@@ -241,7 +241,7 @@ export default function Payments() {
     description: "",
   });
 
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
   const dayendData = localStorage.getItem("dayEndData")
     ? JSON.parse(localStorage.getItem("dayEndData") as string)
