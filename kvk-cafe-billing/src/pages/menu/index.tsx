@@ -1384,13 +1384,18 @@ function CustomAlert({
   alert: AlertState;
   onClose: () => void;
 }) {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onClose();
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
   const styles = {
     success: "border-emerald-200 bg-emerald-50 text-emerald-800",
-
     error: "border-red-200 bg-red-50 text-red-800",
-
     warning: "border-amber-200 bg-amber-50 text-amber-800",
-
     info: "border-blue-200 bg-blue-50 text-blue-800",
   };
 
@@ -1401,7 +1406,9 @@ function CustomAlert({
       <div className="min-w-0 flex-1">
         <p className="font-semibold">{alert.title}</p>
 
-        <p className="mt-1 text-sm opacity-80">{alert.description}</p>
+        <p className="mt-1 text-sm opacity-80">
+          {alert.description}
+        </p>
       </div>
 
       <button
@@ -1414,7 +1421,6 @@ function CustomAlert({
     </div>
   );
 }
-
 /* =========================================================
    COFFEE TABLE
 ========================================================= */
