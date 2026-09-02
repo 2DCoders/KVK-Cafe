@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Coffee,
   Plus,
@@ -11,6 +11,8 @@ import {
   Check,
   Clock,
   Utensils,
+  MoreVertical,
+  Loader2,
 } from "lucide-react";
 import { createPortal } from "react-dom";
 import {
@@ -149,12 +151,26 @@ export default function MenuPage() {
 
   const [isLoading, setIsLoading] = useState(false);
 
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  const [deletingItem, setDeletingItem] = useState<CoffeeItem | MealItem | null>(
+    null,
+  );
+
   const [pageAlert, setPageAlert] = useState<AlertState>({
     visible: false,
     variant: "success",
     title: "",
     description: "",
   });
+
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   /* =========================================================
      FILTERING
@@ -171,6 +187,55 @@ export default function MenuPage() {
       item.name.toLowerCase().includes(search.toLowerCase()),
     );
   }, [mealItems, search]);
+
+  const paginatedCoffeeItems = useMemo(() => {
+    const totalPageCount = Math.max(1, Math.ceil(filteredCoffeeItems.length / itemsPerPage));
+    if (currentPage > totalPageCount) {
+      setCurrentPage(totalPageCount);
+    }
+
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredCoffeeItems.slice(start, start + itemsPerPage);
+  }, [currentPage, filteredCoffeeItems, itemsPerPage]);
+
+  const paginatedMealItems = useMemo(() => {
+    const totalPageCount = Math.max(1, Math.ceil(filteredMealItems.length / itemsPerPage));
+    if (currentPage > totalPageCount) {
+      setCurrentPage(totalPageCount);
+    }
+
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredMealItems.slice(start, start + itemsPerPage);
+  }, [currentPage, filteredMealItems, itemsPerPage]);
+
+  const totalPages =
+    (activeTab === "coffee" ? filteredCoffeeItems.length : filteredMealItems.length) === 0
+      ? 1
+      : Math.ceil(
+          (activeTab === "coffee" ? filteredCoffeeItems.length : filteredMealItems.length) /
+            itemsPerPage,
+        );
+
+  const activeItems = activeTab === "coffee" ? filteredCoffeeItems : filteredMealItems;
+  const showingFrom = activeItems.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+  const showingTo = Math.min(currentPage * itemsPerPage, activeItems.length);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   /* =========================================================
      LOAD MENU ITEMS
@@ -687,23 +752,18 @@ export default function MenuPage() {
      DELETE
   ========================================================= */
 
+  const openDeleteModal = (item: CoffeeItem | MealItem) => {
+    setDeletingItem(item);
+    setIsDeleteModalOpen(true);
+    setOpenMenuId(null);
+  };
+
   const handleDelete = async (id: number) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this menu item?",
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
     try {
       setIsLoading(true);
 
       await deleteMenuItem(id.toString());
 
-      /*
-       * Immediately remove from UI
-       */
       if (activeTab === "coffee") {
         setCoffeeItems((prev) => prev.filter((item) => item.id !== id));
       } else {
@@ -717,9 +777,6 @@ export default function MenuPage() {
         description: "The menu item has been deleted successfully.",
       });
 
-      /*
-       * Reload from backend
-       */
       await loadMenuItems(activeTab === "coffee" ? 4 : 1);
     } catch (error) {
       console.error("Failed to delete menu item:", error);
@@ -732,6 +789,8 @@ export default function MenuPage() {
       });
     } finally {
       setIsLoading(false);
+      setIsDeleteModalOpen(false);
+      setDeletingItem(null);
     }
   };
 
@@ -742,6 +801,8 @@ export default function MenuPage() {
   const handleTabChange = (tab: MenuTab) => {
     setActiveTab(tab);
     setSearch("");
+    setCurrentPage(1);
+    setOpenMenuId(null);
 
     loadMenuItems(tab === "coffee" ? 4 : 1);
   };
@@ -860,8 +921,8 @@ export default function MenuPage() {
             CONTENT
         ================================================= */}
 
-        <div className="mt-5 overflow-hidden rounded-2xl border border-amber-200/70 bg-white shadow-sm">
-          <div className="flex flex-col gap-3 border-b border-amber-100 bg-amber-50/40 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-5 overflow-visible rounded-2xl border border-amber-200/70 bg-white shadow-sm">
+          <div className="flex flex-col gap-3 border-b border-amber-100 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="font-semibold text-[#4A2410]">
                 {activeTab === "coffee"
@@ -889,7 +950,10 @@ export default function MenuPage() {
               <input
                 type="text"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
                 placeholder="Search menu..."
                 className="h-11 w-full rounded-xl border border-amber-200 bg-white pl-10 pr-4 text-sm text-[#4A2410] outline-none transition placeholder:text-[#B9957E] focus:border-amber-500 focus:ring-4 focus:ring-amber-100"
               />
@@ -898,19 +962,74 @@ export default function MenuPage() {
 
           {/* Desktop */}
 
-          <div className="hidden overflow-x-auto md:block">
+          <div className="hidden overflow-visible md:block">
             {activeTab === "coffee" ? (
               <CoffeeTable
-                items={filteredCoffeeItems}
+                items={paginatedCoffeeItems}
+                openMenuId={openMenuId}
+                menuRef={menuRef}
+                onMenuToggle={(id) =>
+                  setOpenMenuId((previous) => (previous === id ? null : id))
+                }
                 onEdit={openEditModal}
-                onDelete={handleDelete}
+                onDelete={openDeleteModal}
               />
             ) : (
               <MealTable
-                items={filteredMealItems}
+                items={paginatedMealItems}
+                openMenuId={openMenuId}
+                menuRef={menuRef}
+                onMenuToggle={(id) =>
+                  setOpenMenuId((previous) => (previous === id ? null : id))
+                }
                 onEdit={openEditModal}
-                onDelete={handleDelete}
+                onDelete={openDeleteModal}
               />
+            )}
+
+            {!isLoading && activeItems.length > 0 && (
+              <div className="flex flex-col gap-4 border-t border-amber-100 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+                  <p className="text-sm text-[#8A5A3C]">
+                    Showing <strong className="text-[#4A2410]">{showingFrom}</strong> to <strong className="text-[#4A2410]">{showingTo}</strong> of <strong className="text-[#4A2410]">{activeItems.length}</strong>
+                  </p>
+
+                  <select
+                    value={itemsPerPage}
+                    onChange={(event) => {
+                      setItemsPerPage(Number(event.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="h-9 rounded-lg border border-amber-200 bg-white px-2 text-sm text-[#4A2410] outline-none focus:border-amber-500"
+                  >
+                    <option value={5}>5 rows</option>
+                    <option value={10}>10 rows</option>
+                    <option value={20}>20 rows</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-between gap-2 sm:justify-end">
+                  <PaginationButton
+                    label="Previous"
+                    disabled={currentPage === 1}
+                    onClick={() =>
+                      setCurrentPage((page) => Math.max(1, page - 1))
+                    }
+                  />
+
+                  <span className="text-sm font-semibold text-[#6B422B]">
+                    {currentPage} / {totalPages}
+                  </span>
+
+                  <PaginationButton
+                    label="Next"
+                    disabled={currentPage === totalPages}
+                    onClick={() =>
+                      setCurrentPage((page) => Math.min(totalPages, page + 1))
+                    }
+                  />
+                </div>
+              </div>
             )}
           </div>
 
@@ -919,20 +1038,88 @@ export default function MenuPage() {
           <div className="md:hidden">
             {activeTab === "coffee" ? (
               <CoffeeMobileCards
-                items={filteredCoffeeItems}
+                items={paginatedCoffeeItems}
+                openMenuId={openMenuId}
+                menuRef={menuRef}
+                onMenuToggle={(id) =>
+                  setOpenMenuId((previous) => (previous === id ? null : id))
+                }
                 onEdit={openEditModal}
-                onDelete={handleDelete}
+                onDelete={openDeleteModal}
               />
             ) : (
               <MealMobileCards
-                items={filteredMealItems}
+                items={paginatedMealItems}
+                openMenuId={openMenuId}
+                menuRef={menuRef}
+                onMenuToggle={(id) =>
+                  setOpenMenuId((previous) => (previous === id ? null : id))
+                }
                 onEdit={openEditModal}
-                onDelete={handleDelete}
+                onDelete={openDeleteModal}
               />
+            )}
+
+            {!isLoading && activeItems.length > 0 && (
+              <div className="flex flex-col gap-4 border-t border-amber-100 bg-amber-50/30 px-4 py-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm text-[#8A5A3C]">
+                    Showing <strong className="text-[#4A2410]">{showingFrom}</strong> to <strong className="text-[#4A2410]">{showingTo}</strong> of <strong className="text-[#4A2410]">{activeItems.length}</strong>
+                  </p>
+
+                  <select
+                    value={itemsPerPage}
+                    onChange={(event) => {
+                      setItemsPerPage(Number(event.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="h-9 rounded-lg border border-amber-200 bg-white px-2 text-sm text-[#4A2410] outline-none focus:border-amber-500"
+                  >
+                    <option value={5}>5 rows</option>
+                    <option value={10}>10 rows</option>
+                    <option value={20}>20 rows</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-between gap-2">
+                  <PaginationButton
+                    label="Previous"
+                    disabled={currentPage === 1}
+                    onClick={() =>
+                      setCurrentPage((page) => Math.max(1, page - 1))
+                    }
+                  />
+
+                  <span className="text-sm font-semibold text-[#6B422B]">
+                    {currentPage} / {totalPages}
+                  </span>
+
+                  <PaginationButton
+                    label="Next"
+                    disabled={currentPage === totalPages}
+                    onClick={() =>
+                      setCurrentPage((page) => Math.min(totalPages, page + 1))
+                    }
+                  />
+                </div>
+              </div>
             )}
           </div>
         </div>
       </div>
+
+      {isDeleteModalOpen && deletingItem && (
+        <DeleteMenuItemModal
+          item={deletingItem}
+          isSubmitting={isLoading}
+          onClose={() => {
+            if (isLoading) return;
+            setIsDeleteModalOpen(false);
+            setDeletingItem(null);
+          }}
+          onDelete={() => void handleDelete(deletingItem.id)}
+        />
+      )}
 
       {/* =====================================================
           ADD / EDIT MODAL
@@ -1427,12 +1614,18 @@ function CustomAlert({
 
 function CoffeeTable({
   items,
+  openMenuId,
+  menuRef,
+  onMenuToggle,
   onEdit,
   onDelete,
 }: {
   items: CoffeeItem[];
+  openMenuId: number | null;
+  menuRef: React.RefObject<HTMLDivElement | null>;
+  onMenuToggle: (id: number) => void;
   onEdit: (item: CoffeeItem) => void;
-  onDelete: (id: number) => void;
+  onDelete: (item: CoffeeItem) => void;
 }) {
   if (items.length === 0) {
     return <EmptyState type="coffee" />;
@@ -1441,7 +1634,7 @@ function CoffeeTable({
   return (
     <table className="w-full">
       <thead>
-        <tr className="border-b border-amber-100 bg-amber-50/40">
+        <tr className="border-b border-slate-200 bg-slate-50/80">
           <th className={thClass}>Item</th>
 
           <th className={thClass}>Price</th>
@@ -1458,7 +1651,7 @@ function CoffeeTable({
         {items.map((item) => (
           <tr
             key={item.id}
-            className="border-b border-amber-50 transition hover:bg-amber-50/40"
+            className="border-b border-slate-200 transition hover:bg-amber-50/40"
           >
             <td className="px-5 py-4">
               <div className="flex items-center gap-3">
@@ -1515,11 +1708,49 @@ function CoffeeTable({
               </p>
             </td>
 
-            <td className="px-5 py-4">
-              <ActionButtons
-                onEdit={() => onEdit(item)}
-                onDelete={() => onDelete(item.id)}
-              />
+            <td className="relative px-5 py-4">
+              <div
+                ref={openMenuId === item.id ? menuRef : null}
+                className="flex justify-end"
+              >
+                <button
+                  type="button"
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                  }}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onMenuToggle(item.id);
+                  }}
+                  className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-amber-200 text-[#8A5A3C] transition hover:border-amber-400 hover:bg-amber-50 hover:text-[#7A3E18]"
+                >
+                  <MoreVertical size={18} />
+                </button>
+
+                {openMenuId === item.id && (
+                  <div className="absolute right-5 top-14 z-50 w-40 rounded-xl border border-amber-200 bg-white p-1.5 shadow-xl">
+                    <ActionMenuItem
+                      icon={<Edit size={16} />}
+                      label="Edit"
+                      onClick={() => {
+                        onEdit(item);
+                        onMenuToggle(item.id);
+                      }}
+                    />
+                    <ActionMenuItem
+                      icon={<Trash2 size={16} />}
+                      label="Delete"
+                      danger
+                      onClick={() => {
+                        onDelete(item);
+                        onMenuToggle(item.id);
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
             </td>
           </tr>
         ))}
@@ -1534,12 +1765,18 @@ function CoffeeTable({
 
 function MealTable({
   items,
+  openMenuId,
+  menuRef,
+  onMenuToggle,
   onEdit,
   onDelete,
 }: {
   items: MealItem[];
+  openMenuId: number | null;
+  menuRef: React.RefObject<HTMLDivElement | null>;
+  onMenuToggle: (id: number) => void;
   onEdit: (item: MealItem) => void;
-  onDelete: (id: number) => void;
+  onDelete: (item: MealItem) => void;
 }) {
   if (items.length === 0) {
     return <EmptyState type="meal" />;
@@ -1548,7 +1785,7 @@ function MealTable({
   return (
     <table className="w-full">
       <thead>
-        <tr className="border-b border-amber-100 bg-amber-50/40">
+        <tr className="border-b border-slate-200 bg-slate-50/80">
           <th className={thClass}>Item</th>
 
           <th className={thClass}>Price</th>
@@ -1639,11 +1876,49 @@ function MealTable({
               </p>
             </td>
 
-            <td className="px-5 py-4">
-              <ActionButtons
-                onEdit={() => onEdit(item)}
-                onDelete={() => onDelete(item.id)}
-              />
+            <td className="relative px-5 py-4">
+              <div
+                ref={openMenuId === item.id ? menuRef : null}
+                className="flex justify-end"
+              >
+                <button
+                  type="button"
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                  }}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onMenuToggle(item.id);
+                  }}
+                  className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-amber-200 text-[#8A5A3C] transition hover:border-amber-400 hover:bg-amber-50 hover:text-[#7A3E18]"
+                >
+                  <MoreVertical size={18} />
+                </button>
+
+                {openMenuId === item.id && (
+                  <div className="absolute right-5 top-14 z-50 w-40 rounded-xl border border-amber-200 bg-white p-1.5 shadow-xl">
+                    <ActionMenuItem
+                      icon={<Edit size={16} />}
+                      label="Edit"
+                      onClick={() => {
+                        onEdit(item);
+                        onMenuToggle(item.id);
+                      }}
+                    />
+                    <ActionMenuItem
+                      icon={<Trash2 size={16} />}
+                      label="Delete"
+                      danger
+                      onClick={() => {
+                        onDelete(item);
+                        onMenuToggle(item.id);
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
             </td>
           </tr>
         ))}
@@ -1658,12 +1933,18 @@ function MealTable({
 
 function CoffeeMobileCards({
   items,
+  openMenuId,
+  menuRef,
+  onMenuToggle,
   onEdit,
   onDelete,
 }: {
   items: CoffeeItem[];
+  openMenuId: number | null;
+  menuRef: React.RefObject<HTMLDivElement | null>;
+  onMenuToggle: (id: number) => void;
   onEdit: (item: CoffeeItem) => void;
-  onDelete: (id: number) => void;
+  onDelete: (item: CoffeeItem) => void;
 }) {
   if (items.length === 0) {
     return <EmptyState type="coffee" />;
@@ -1698,10 +1979,45 @@ function CoffeeMobileCards({
                   </p>
                 </div>
 
-                <ActionButtons
-                  onEdit={() => onEdit(item)}
-                  onDelete={() => onDelete(item.id)}
-                />
+                <div ref={openMenuId === item.id ? menuRef : null} className="relative">
+                  <button
+                    type="button"
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                    }}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      onMenuToggle(item.id);
+                    }}
+                    className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-amber-200 text-[#8A5A3C] transition hover:border-amber-400 hover:bg-amber-50 hover:text-[#7A3E18]"
+                  >
+                    <MoreVertical size={17} />
+                  </button>
+
+                  {openMenuId === item.id && (
+                    <div className="absolute right-0 top-11 z-50 w-40 rounded-xl border border-amber-200 bg-white p-1.5 shadow-xl">
+                      <ActionMenuItem
+                        icon={<Edit size={16} />}
+                        label="Edit"
+                        onClick={() => {
+                          onEdit(item);
+                          onMenuToggle(item.id);
+                        }}
+                      />
+                      <ActionMenuItem
+                        icon={<Trash2 size={16} />}
+                        label="Delete"
+                        danger
+                        onClick={() => {
+                          onDelete(item);
+                          onMenuToggle(item.id);
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -1734,12 +2050,18 @@ function CoffeeMobileCards({
 
 function MealMobileCards({
   items,
+  openMenuId,
+  menuRef,
+  onMenuToggle,
   onEdit,
   onDelete,
 }: {
   items: MealItem[];
+  openMenuId: number | null;
+  menuRef: React.RefObject<HTMLDivElement | null>;
+  onMenuToggle: (id: number) => void;
   onEdit: (item: MealItem) => void;
-  onDelete: (id: number) => void;
+  onDelete: (item: MealItem) => void;
 }) {
   if (items.length === 0) {
     return <EmptyState type="meal" />;
@@ -1774,10 +2096,45 @@ function MealMobileCards({
                   </p>
                 </div>
 
-                <ActionButtons
-                  onEdit={() => onEdit(item)}
-                  onDelete={() => onDelete(item.id)}
-                />
+                <div ref={openMenuId === item.id ? menuRef : null} className="relative">
+                  <button
+                    type="button"
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                    }}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      onMenuToggle(item.id);
+                    }}
+                    className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-amber-200 text-[#8A5A3C] transition hover:border-amber-400 hover:bg-amber-50 hover:text-[#7A3E18]"
+                  >
+                    <MoreVertical size={17} />
+                  </button>
+
+                  {openMenuId === item.id && (
+                    <div className="absolute right-0 top-11 z-50 w-40 rounded-xl border border-amber-200 bg-white p-1.5 shadow-xl">
+                      <ActionMenuItem
+                        icon={<Edit size={16} />}
+                        label="Edit"
+                        onClick={() => {
+                          onEdit(item);
+                          onMenuToggle(item.id);
+                        }}
+                      />
+                      <ActionMenuItem
+                        icon={<Trash2 size={16} />}
+                        label="Delete"
+                        danger
+                        onClick={() => {
+                          onDelete(item);
+                          onMenuToggle(item.id);
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="mt-2 flex flex-wrap gap-2">
@@ -1820,33 +2177,115 @@ function MealMobileCards({
    ACTION BUTTONS
 ========================================================= */
 
-function ActionButtons({
-  onEdit,
-  onDelete,
+function ActionMenuItem({
+  icon,
+  label,
+  danger,
+  onClick,
 }: {
-  onEdit: () => void;
-  onDelete: () => void;
+  icon: React.ReactNode;
+  label: string;
+  danger?: boolean;
+  onClick: () => void;
 }) {
   return (
-    <div className="flex items-center justify-end gap-1">
-      <button
-        type="button"
-        onClick={onEdit}
-        className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-[#8A5A3C] transition hover:bg-amber-100 hover:text-[#7A3E18]"
-        title="Edit"
-      >
-        <Edit size={16} />
-      </button>
+    <button
+      type="button"
+      onMouseDown={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      }}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onClick();
+      }}
+      className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${danger ? "text-red-600 hover:bg-red-50" : "text-[#5B321D] hover:bg-amber-50 hover:text-[#7A3E18]"}`}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
 
-      <button
-        type="button"
-        onClick={onDelete}
-        className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-[#A4775C] transition hover:bg-red-50 hover:text-red-600"
-        title="Delete"
-      >
-        <Trash2 size={16} />
-      </button>
-    </div>
+function DeleteMenuItemModal({
+  item,
+  isSubmitting,
+  onClose,
+  onDelete,
+}: {
+  item: CoffeeItem | MealItem;
+  isSubmitting: boolean;
+  onClose: () => void;
+  onDelete: () => void;
+}) {
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#2D160A]/60 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-[#7A3E18]">
+          <Trash2 size={25} />
+        </div>
+
+        <div className="mt-4 text-center">
+          <h2 className="text-xl font-bold text-[#4A2410]">Delete Menu Item</h2>
+          <p className="mt-2 text-sm leading-6 text-[#7B5B49]">
+            Are you sure you want to delete <strong className="text-[#4A2410]">{item.name}</strong>? This action cannot be undone.
+          </p>
+        </div>
+
+        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="h-11 cursor-pointer flex-1 rounded-xl border border-amber-200 bg-white text-sm font-semibold text-[#6B422B] transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            onClick={onDelete}
+            disabled={isSubmitting}
+            className="inline-flex h-11 cursor-pointer flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-[#7A3E18] text-sm font-semibold text-white shadow-sm transition hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                Deleting
+              </>
+            ) : (
+              <>
+                <Trash2 size={16} />
+                Delete
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+function PaginationButton({
+  label,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="h-9 rounded-lg border border-amber-200 bg-white px-3 text-sm font-semibold text-[#6B422B] transition hover:border-amber-400 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      {label}
+    </button>
   );
 }
 
@@ -1910,4 +2349,4 @@ const textareaClass =
   "w-full resize-none rounded-xl border border-amber-200 bg-white px-3 py-3 text-sm text-[#4A2410] outline-none transition placeholder:text-[#B9957E] focus:border-amber-500 focus:ring-4 focus:ring-amber-100";
 
 const thClass =
-  "px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-[#9A6A4A]";
+  "px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500";
