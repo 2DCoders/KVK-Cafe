@@ -1401,7 +1401,7 @@ function ActionButtons({
       <button
         type="button"
         onClick={onEdit}
-        className="flex h-9 w-9 items-center justify-center rounded-lg text-[#8A5A3C] transition hover:bg-amber-100 hover:text-[#7A3E18]"
+        className="flex cursor-pointer h-9 w-9 items-center justify-center rounded-lg text-[#8A5A3C] transition hover:bg-amber-100 hover:text-[#7A3E18]"
         title="Edit"
       >
         <Edit size={16} />
@@ -1410,7 +1410,7 @@ function ActionButtons({
       <button
         type="button"
         onClick={onDelete}
-        className="flex h-9 w-9 items-center justify-center rounded-lg text-[#A4775C] transition hover:bg-red-50 hover:text-red-600"
+        className="flex cursor-pointer h-9 w-9 items-center justify-center rounded-lg text-[#A4775C] transition hover:bg-red-50 hover:text-red-600"
         title="Delete"
       >
         <Trash2 size={16} />

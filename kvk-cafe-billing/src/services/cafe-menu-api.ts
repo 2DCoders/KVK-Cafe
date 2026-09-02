@@ -26,6 +26,33 @@ export const createMenuItem = async (menuItemData: FormData) => {
     }
 }
 
+export const updateMenuItem = async (menuItemData: FormData) => {
+    try {
+        const response = await axios.put(CAFE_API_URL, menuItemData, {
+            headers: {
+                Authorization: `Bearer ${getToken()}`,
+                "Content-Type": "multipart/form-data",
+            },
+        });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export const deleteMenuItem = async (menuItemId: string) => {
+    try {
+        const response = await axios.delete(`${CAFE_API_URL}${menuItemId}`, {
+            headers: {
+                Authorization: `Bearer ${getToken()}`,
+            },
+        });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
 export const getMenuItems = async (category: any) => {
     try {
         const response = await axios.get(`${CAFE_API_URL}category/${category}`, {
