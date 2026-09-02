@@ -13,6 +13,7 @@ import {
   Utensils,
   MoreVertical,
   Loader2,
+  Eye,
 } from "lucide-react";
 import { createPortal } from "react-dom";
 import {
@@ -158,6 +159,12 @@ export default function MenuPage() {
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+
+  const [viewingItem, setViewingItem] = useState<CoffeeItem | MealItem | null>(
+    null,
+  );
 
   const [deletingItem, setDeletingItem] = useState<CoffeeItem | MealItem | null>(
     null,
@@ -436,6 +443,12 @@ export default function MenuPage() {
     setIncludeText("");
     setShowIngredientDropdown(false);
     setShowModal(true);
+  };
+
+  const openViewModal = (item: CoffeeItem | MealItem) => {
+    setViewingItem(item);
+    setIsViewModalOpen(true);
+    setOpenMenuId(null);
   };
 
   const closeModal = () => {
@@ -972,6 +985,7 @@ export default function MenuPage() {
                   setOpenMenuId((previous) => (previous === id ? null : id))
                 }
                 onEdit={openEditModal}
+                onView={openViewModal}
                 onDelete={openDeleteModal}
               />
             ) : (
@@ -983,6 +997,7 @@ export default function MenuPage() {
                   setOpenMenuId((previous) => (previous === id ? null : id))
                 }
                 onEdit={openEditModal}
+                onView={openViewModal}
                 onDelete={openDeleteModal}
               />
             )}
@@ -1045,6 +1060,7 @@ export default function MenuPage() {
                   setOpenMenuId((previous) => (previous === id ? null : id))
                 }
                 onEdit={openEditModal}
+                onView={openViewModal}
                 onDelete={openDeleteModal}
               />
             ) : (
@@ -1056,6 +1072,7 @@ export default function MenuPage() {
                   setOpenMenuId((previous) => (previous === id ? null : id))
                 }
                 onEdit={openEditModal}
+                onView={openViewModal}
                 onDelete={openDeleteModal}
               />
             )}
@@ -1118,6 +1135,16 @@ export default function MenuPage() {
             setDeletingItem(null);
           }}
           onDelete={() => void handleDelete(deletingItem.id)}
+        />
+      )}
+
+      {isViewModalOpen && viewingItem && (
+        <ViewMenuItemModal
+          item={viewingItem}
+          onClose={() => {
+            setIsViewModalOpen(false);
+            setViewingItem(null);
+          }}
         />
       )}
 
@@ -1618,6 +1645,7 @@ function CoffeeTable({
   menuRef,
   onMenuToggle,
   onEdit,
+  onView,
   onDelete,
 }: {
   items: CoffeeItem[];
@@ -1625,6 +1653,7 @@ function CoffeeTable({
   menuRef: React.RefObject<HTMLDivElement | null>;
   onMenuToggle: (id: number) => void;
   onEdit: (item: CoffeeItem) => void;
+  onView: (item: CoffeeItem) => void;
   onDelete: (item: CoffeeItem) => void;
 }) {
   if (items.length === 0) {
@@ -1732,6 +1761,11 @@ function CoffeeTable({
                 {openMenuId === item.id && (
                   <div className="absolute right-5 top-14 z-50 w-40 rounded-xl border border-amber-200 bg-white p-1.5 shadow-xl">
                     <ActionMenuItem
+                      icon={<Eye size={16} />}
+                      label="View"
+                      onClick={() => onView(item)}
+                    />
+                    <ActionMenuItem
                       icon={<Edit size={16} />}
                       label="Edit"
                       onClick={() => {
@@ -1769,6 +1803,7 @@ function MealTable({
   menuRef,
   onMenuToggle,
   onEdit,
+  onView,
   onDelete,
 }: {
   items: MealItem[];
@@ -1776,6 +1811,7 @@ function MealTable({
   menuRef: React.RefObject<HTMLDivElement | null>;
   onMenuToggle: (id: number) => void;
   onEdit: (item: MealItem) => void;
+  onView: (item: MealItem) => void;
   onDelete: (item: MealItem) => void;
 }) {
   if (items.length === 0) {
@@ -1900,6 +1936,11 @@ function MealTable({
                 {openMenuId === item.id && (
                   <div className="absolute right-5 top-14 z-50 w-40 rounded-xl border border-amber-200 bg-white p-1.5 shadow-xl">
                     <ActionMenuItem
+                      icon={<Eye size={16} />}
+                      label="View"
+                      onClick={() => onView(item)}
+                    />
+                    <ActionMenuItem
                       icon={<Edit size={16} />}
                       label="Edit"
                       onClick={() => {
@@ -1937,6 +1978,7 @@ function CoffeeMobileCards({
   menuRef,
   onMenuToggle,
   onEdit,
+  onView,
   onDelete,
 }: {
   items: CoffeeItem[];
@@ -1944,6 +1986,7 @@ function CoffeeMobileCards({
   menuRef: React.RefObject<HTMLDivElement | null>;
   onMenuToggle: (id: number) => void;
   onEdit: (item: CoffeeItem) => void;
+  onView: (item: CoffeeItem) => void;
   onDelete: (item: CoffeeItem) => void;
 }) {
   if (items.length === 0) {
@@ -1998,6 +2041,11 @@ function CoffeeMobileCards({
 
                   {openMenuId === item.id && (
                     <div className="absolute right-0 top-11 z-50 w-40 rounded-xl border border-amber-200 bg-white p-1.5 shadow-xl">
+                      <ActionMenuItem
+                        icon={<Eye size={16} />}
+                        label="View"
+                        onClick={() => onView(item)}
+                      />
                       <ActionMenuItem
                         icon={<Edit size={16} />}
                         label="Edit"
@@ -2054,6 +2102,7 @@ function MealMobileCards({
   menuRef,
   onMenuToggle,
   onEdit,
+  onView,
   onDelete,
 }: {
   items: MealItem[];
@@ -2061,6 +2110,7 @@ function MealMobileCards({
   menuRef: React.RefObject<HTMLDivElement | null>;
   onMenuToggle: (id: number) => void;
   onEdit: (item: MealItem) => void;
+  onView: (item: MealItem) => void;
   onDelete: (item: MealItem) => void;
 }) {
   if (items.length === 0) {
@@ -2115,6 +2165,11 @@ function MealMobileCards({
 
                   {openMenuId === item.id && (
                     <div className="absolute right-0 top-11 z-50 w-40 rounded-xl border border-amber-200 bg-white p-1.5 shadow-xl">
+                      <ActionMenuItem
+                        icon={<Eye size={16} />}
+                        label="View"
+                        onClick={() => onView(item)}
+                      />
                       <ActionMenuItem
                         icon={<Edit size={16} />}
                         label="Edit"
@@ -2205,6 +2260,103 @@ function ActionMenuItem({
       {icon}
       {label}
     </button>
+  );
+}
+
+function ViewMenuItemModal({
+  item,
+  onClose,
+}: {
+  item: CoffeeItem | MealItem;
+  onClose: () => void;
+}) {
+  const isMeal = "includes" in item;
+  const itemTags = isMeal ? item.includes : item.ingredients;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#2D160A]/60 p-4 backdrop-blur-sm">
+      <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-amber-100 px-6 py-5">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#A4775C]">
+              {isMeal ? "Meal" : "Coffee"}
+            </p>
+            <h2 className="mt-1 text-xl font-bold text-[#4A2410]">{item.name}</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close view"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-[#8A5A3C] transition hover:bg-amber-50"
+          >
+            <X size={19} />
+          </button>
+        </div>
+
+        <div className="space-y-5 p-6">
+          {item.image ? (
+            <img
+              src={getBase64ImageSrc(item.image)}
+              alt={item.name}
+              className="h-52 w-full rounded-2xl object-cover"
+            />
+          ) : (
+            <div className="flex h-32 items-center justify-center rounded-2xl bg-amber-50 text-[#7A3E18]">
+              {isMeal ? <Utensils size={34} /> : <Coffee size={34} />}
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl bg-emerald-50 p-3">
+              <p className="text-xs text-emerald-700">Price</p>
+              <p className="mt-1 font-bold text-emerald-800">LKR {item.price.toLocaleString()}</p>
+            </div>
+            {isMeal ? (
+              <>
+                <div className="rounded-xl bg-amber-50 p-3">
+                  <p className="text-xs text-[#8A5A3C]">Preparation</p>
+                  <p className="mt-1 font-semibold text-[#4A2410]">{item.preparationTimeInMinutes} min</p>
+                </div>
+                <div className="rounded-xl bg-amber-50 p-3">
+                  <p className="text-xs text-[#8A5A3C]">Portion</p>
+                  <p className="mt-1 font-semibold text-[#4A2410]">{item.portionSize || "-"}</p>
+                </div>
+              </>
+            ) : null}
+          </div>
+
+          {item.description && (
+            <div>
+              <h3 className="text-sm font-semibold text-[#4A2410]">Description</h3>
+              <p className="mt-1 text-sm leading-6 text-[#79543C]">{item.description}</p>
+            </div>
+          )}
+
+          {item.facts && (
+            <div>
+              <h3 className="text-sm font-semibold text-[#4A2410]">Facts</h3>
+              <p className="mt-1 text-sm leading-6 text-[#79543C]">{item.facts}</p>
+            </div>
+          )}
+
+          {itemTags.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-[#4A2410]">
+                {isMeal ? "Includes" : "Ingredients"}
+              </h3>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {itemTags.map((tag, index) => (
+                  <span key={`${tag}-${index}`} className="rounded-md bg-amber-50 px-2.5 py-1.5 text-xs text-[#7A3E18]">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
 

@@ -83,13 +83,6 @@ export default function Sidebar({
       submenu: null,
     },
     {
-      id: "packages",
-      label: "Packages",
-      icon: Boxes,
-      path: "/packages",
-      submenu: null,
-    },
-    {
       id: "payments",
       label: "Payments",
       icon: CreditCard,
