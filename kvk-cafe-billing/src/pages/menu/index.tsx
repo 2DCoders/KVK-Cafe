@@ -22,19 +22,23 @@ import {
 
 type MenuTab = "coffee" | "meals";
 
-const getBase64ImageSrc = (
-  base64: string | null | undefined,
-): string => {
+/* =========================================================
+   IMAGE
+========================================================= */
+
+const getBase64ImageSrc = (base64: string | null | undefined): string => {
   if (!base64) return "";
 
-  // Already a complete data URI
   if (base64.startsWith("data:image/")) {
     return base64;
   }
 
-  // Raw Base64 returned by API
   return `data:image/png;base64,${base64}`;
 };
+
+/* =========================================================
+   TYPES
+========================================================= */
 
 interface CoffeeItem {
   id: number;
@@ -44,6 +48,8 @@ interface CoffeeItem {
   description: string;
   facts: string;
   ingredients: string[];
+  category?: number;
+  isActive?: boolean;
 }
 
 interface MealItem {
@@ -53,9 +59,15 @@ interface MealItem {
   price: number;
   description: string;
   facts: string;
+
+  // Backend returns meal includes inside "ingredients"
   includes: string[];
+
   preparationTimeInMinutes: number;
   portionSize: string;
+
+  category?: number;
+  isActive?: boolean;
 }
 
 interface FormData {
@@ -101,6 +113,10 @@ const emptyForm: FormData = {
   portionSize: "",
 };
 
+/* =========================================================
+   ALERT
+========================================================= */
+
 type AlertState = {
   visible: boolean;
   variant: "success" | "error" | "warning" | "info";
@@ -108,22 +124,26 @@ type AlertState = {
   description: string;
 };
 
+/* =========================================================
+   COMPONENT
+========================================================= */
+
 export default function MenuPage() {
   const [activeTab, setActiveTab] = useState<MenuTab>("coffee");
 
   const [coffeeItems, setCoffeeItems] = useState<CoffeeItem[]>([]);
+
   const [mealItems, setMealItems] = useState<MealItem[]>([]);
 
   const [search, setSearch] = useState("");
 
   const [showModal, setShowModal] = useState(false);
+
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  const [formData, setFormData] =
-    useState<FormData>(emptyForm);
+  const [formData, setFormData] = useState<FormData>(emptyForm);
 
-  const [showIngredientDropdown, setShowIngredientDropdown] =
-    useState(false);
+  const [showIngredientDropdown, setShowIngredientDropdown] = useState(false);
 
   const [includeText, setIncludeText] = useState("");
 
@@ -169,10 +189,8 @@ export default function MenuPage() {
         [];
 
       const mappedData = Array.isArray(data)
-        ? data.map((item: any) => ({
-            ...item,
-
-            ingredients:
+        ? data.map((item: any) => {
+            const parsedIngredients =
               typeof item.ingredients === "string"
                 ? item.ingredients
                     .split(",")
@@ -180,26 +198,28 @@ export default function MenuPage() {
                     .filter(Boolean)
                 : Array.isArray(item.ingredients)
                   ? item.ingredients
-                  : [],
+                  : [];
 
-            includes:
-              typeof item.includes === "string"
-                ? item.includes
-                    .split(",")
-                    .map((x: string) => x.trim())
-                    .filter(Boolean)
-                : Array.isArray(item.includes)
-                  ? item.includes
-                  : [],
-          }))
+            const itemCategory = Number(item.category ?? category);
+
+            return {
+              ...item,
+
+              category: itemCategory,
+
+              ingredients: itemCategory === 4 ? parsedIngredients : [],
+
+              includes: itemCategory === 1 ? parsedIngredients : [],
+            };
+          })
         : [];
 
       if (category === 4) {
-        setCoffeeItems(mappedData);
+        setCoffeeItems(mappedData as CoffeeItem[]);
       }
 
       if (category === 1) {
-        setMealItems(mappedData);
+        setMealItems(mappedData as MealItem[]);
       }
     } catch (error) {
       console.error("Failed to load menu items:", error);
@@ -208,13 +228,16 @@ export default function MenuPage() {
         visible: true,
         variant: "error",
         title: "Failed to Load Menu",
-        description:
-          "Unable to load menu items. Please try again.",
+        description: "Unable to load menu items. Please try again.",
       });
     } finally {
       setIsLoading(false);
     }
   };
+
+  /* =========================================================
+     INITIAL LOAD
+  ========================================================= */
 
   useEffect(() => {
     loadMenuItems(4);
@@ -226,50 +249,122 @@ export default function MenuPage() {
 
   const openAddModal = () => {
     setEditingId(null);
-    setFormData(emptyForm);
+
+    setFormData({
+      ...emptyForm,
+      ingredients: [],
+      includes: [],
+    });
+
     setIncludeText("");
     setShowIngredientDropdown(false);
     setShowModal(true);
   };
 
-  const openEditModal = (
-    item: CoffeeItem | MealItem,
-  ) => {
+  const openEditModal = (item: CoffeeItem | MealItem) => {
     setEditingId(item.id);
 
-    if (activeTab === "coffee") {
+    const itemCategory = Number(item.category);
+
+    /* =====================================================
+     COFFEE
+  ===================================================== */
+
+    if (itemCategory === 4 || activeTab === "coffee") {
       const coffee = item as CoffeeItem;
 
       setFormData({
         name: coffee.name ?? "",
+
+        // IMPORTANT:
+        // Existing image is only for preview.
+        // Do not send it back unless user selects a new image.
         image: null,
+
         imagePreview: getBase64ImageSrc(coffee.image),
-        price: coffee.price?.toString() ?? "",
+
+        price:
+          coffee.price !== undefined && coffee.price !== null
+            ? String(coffee.price)
+            : "",
+
         description: coffee.description ?? "",
+
         facts: coffee.facts ?? "",
-        ingredients: coffee.ingredients ?? [],
+
+        ingredients: Array.isArray(coffee.ingredients)
+          ? coffee.ingredients
+          : typeof (coffee as any).ingredients === "string"
+            ? (coffee as any).ingredients
+                .split(",")
+                .map((x: string) => x.trim())
+                .filter(Boolean)
+            : [],
 
         includes: [],
+
         preparationTimeInMinutes: "",
+
         portionSize: "",
       });
     } else {
+      /* =====================================================
+     MEAL
+  ===================================================== */
       const meal = item as MealItem;
+
+      /*
+       * Backend returns meal includes as:
+       *
+       * ingredients: "Egg,Bread,Tea"
+       *
+       * Convert that into:
+       *
+       * includes: ["Egg", "Bread", "Tea"]
+       */
+
+      let mealIncludes: string[] = [];
+
+      if (Array.isArray(meal.includes)) {
+        mealIncludes = meal.includes;
+      } else if (typeof (meal as any).ingredients === "string") {
+        mealIncludes = (meal as any).ingredients
+          .split(",")
+          .map((x: string) => x.trim())
+          .filter(Boolean);
+      }
 
       setFormData({
         name: meal.name ?? "",
+
+        // Existing image is only preview.
         image: null,
+
         imagePreview: getBase64ImageSrc(meal.image),
-        price: meal.price?.toString() ?? "",
+
+        price:
+          meal.price !== undefined && meal.price !== null
+            ? String(meal.price)
+            : "",
+
         description: meal.description ?? "",
+
         facts: meal.facts ?? "",
 
         ingredients: [],
 
-        includes: meal.includes ?? [],
+        includes: mealIncludes,
+
         preparationTimeInMinutes:
-          meal.preparationTimeInMinutes?.toString() ?? "",
-        portionSize: meal.portionSize ?? "",
+          meal.preparationTimeInMinutes !== undefined &&
+          meal.preparationTimeInMinutes !== null
+            ? String(meal.preparationTimeInMinutes)
+            : "",
+
+        portionSize:
+          meal.portionSize !== undefined && meal.portionSize !== null
+            ? String(meal.portionSize)
+            : "",
       });
     }
 
@@ -281,7 +376,13 @@ export default function MenuPage() {
   const closeModal = () => {
     setShowModal(false);
     setEditingId(null);
-    setFormData(emptyForm);
+
+    setFormData({
+      ...emptyForm,
+      ingredients: [],
+      includes: [],
+    });
+
     setIncludeText("");
     setShowIngredientDropdown(false);
   };
@@ -290,27 +391,19 @@ export default function MenuPage() {
      IMAGE
   ========================================================= */
 
-  const handleImageChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
 
     if (!file) return;
 
-    // Optional basic validation
-    const allowedTypes = [
-      "image/png",
-      "image/jpeg",
-      "image/webp",
-    ];
+    const allowedTypes = ["image/png", "image/jpeg", "image/webp"];
 
     if (!allowedTypes.includes(file.type)) {
       setPageAlert({
         visible: true,
         variant: "error",
         title: "Invalid Image",
-        description:
-          "Please select a PNG, JPG or WEBP image.",
+        description: "Please select a PNG, JPG or WEBP image.",
       });
 
       return;
@@ -327,20 +420,15 @@ export default function MenuPage() {
      INGREDIENTS
   ========================================================= */
 
-  const toggleIngredient = (
-    ingredient: string,
-  ) => {
+  const toggleIngredient = (ingredient: string) => {
     setFormData((prev) => {
-      const exists =
-        prev.ingredients.includes(ingredient);
+      const exists = prev.ingredients.includes(ingredient);
 
       return {
         ...prev,
 
         ingredients: exists
-          ? prev.ingredients.filter(
-              (x) => x !== ingredient,
-            )
+          ? prev.ingredients.filter((x) => x !== ingredient)
           : [...prev.ingredients, ingredient],
       };
     });
@@ -357,7 +445,13 @@ export default function MenuPage() {
 
     setFormData((prev) => ({
       ...prev,
-      includes: [...prev.includes, value],
+
+      /*
+       * Prevent duplicate includes
+       */
+      includes: prev.includes.includes(value)
+        ? prev.includes
+        : [...prev.includes, value],
     }));
 
     setIncludeText("");
@@ -367,9 +461,7 @@ export default function MenuPage() {
     setFormData((prev) => ({
       ...prev,
 
-      includes: prev.includes.filter(
-        (_, i) => i !== index,
-      ),
+      includes: prev.includes.filter((_, i) => i !== index),
     }));
   };
 
@@ -380,93 +472,90 @@ export default function MenuPage() {
   const buildMenuFormData = () => {
     const data = new FormData();
 
+    /*
+     * ID
+     */
     data.append("id", editingId?.toString() ?? "0");
 
-    data.append(
-      "name",
-      formData.name.trim(),
-    );
+    /*
+     * Common fields
+     */
+    data.append("name", formData.name.trim());
 
-    data.append(
-      "price",
-      Number(formData.price).toString(),
-    );
+    data.append("price", Number(formData.price).toString());
 
-    data.append(
-      "description",
-      formData.description?.trim() ?? "",
-    );
+    data.append("description", formData.description?.trim() ?? "");
 
-    data.append(
-      "facts",
-      formData.facts?.trim() ?? "",
-    );
+    data.append("facts", formData.facts?.trim() ?? "");
+
+    /* =====================================================
+       COFFEE
+    ===================================================== */
 
     if (activeTab === "coffee") {
-      /*
-       * Coffee
-       */
-      data.append(
-        "ingredients",
-        formData.ingredients.join(","),
-      );
+      data.append("ingredients", formData.ingredients.join(","));
 
       data.append("category", "4");
 
-      data.append(
-        "preparationTimeInMinutes",
-        "0",
-      );
+      data.append("preparationTimeInMinutes", "0");
 
-      data.append(
-        "portionSize",
-        "0",
-      );
+      data.append("portionSize", "0");
     } else {
+      /* =====================================================
+       MEALS
+    ===================================================== */
       /*
-       * Meals
+       * IMPORTANT:
        *
-       * Backend field appears to use "ingredients"
-       * for the meal Includes values as well.
+       * Backend expects meal Includes
+       * inside the "ingredients" field.
+       *
+       * Example:
+       *
+       * includes:
+       * [
+       *   "ffff",
+       *   "eeeee",
+       *   "trytr"
+       * ]
+       *
+       * becomes:
+       *
+       * ingredients:
+       * "ffff,eeeee,trytr"
        */
-      data.append(
-        "ingredients",
-        formData.includes.join(","),
-      );
+      data.append("ingredients", formData.includes.join(","));
 
       data.append("category", "1");
 
       data.append(
         "preparationTimeInMinutes",
-        Number(
-          formData.preparationTimeInMinutes || 0,
-        ).toString(),
+        Number(formData.preparationTimeInMinutes || 0).toString(),
       );
 
-      data.append(
-        "portionSize",
-        formData.portionSize?.trim() || "0",
-      );
+      data.append("portionSize", formData.portionSize?.trim() || "0");
     }
 
-    data.append(
-      "isActive",
-      "true",
-    );
+    /*
+     * Active
+     */
+    data.append("isActive", "true");
 
     /*
      * IMPORTANT:
-     * Only append image when a NEW image has
-     * actually been selected.
      *
-     * This prevents the existing Base64 image
-     * from being replaced by an empty Blob().
+     * Only append image when a NEW
+     * image has been selected.
+     *
+     * During edit:
+     *
+     * image = null
+     *
+     * means:
+     * keep existing database image.
      */
     if (formData.image) {
-      data.append(
-        "image",
-        formData.image,
-      );
+      data.append("image", formData.image);
     }
 
     return data;
@@ -476,50 +565,41 @@ export default function MenuPage() {
      CREATE / UPDATE
   ========================================================= */
 
-  const handleSubmit = async (
-    e: React.FormEvent,
-  ) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    /* ---------- Validation ---------- */
+    /* =====================================================
+       VALIDATION
+    ===================================================== */
 
     if (!formData.name.trim()) {
       setPageAlert({
         visible: true,
         variant: "warning",
         title: "Item Name Required",
-        description:
-          "Please enter the menu item name.",
+        description: "Please enter the menu item name.",
       });
 
       return;
     }
 
-    if (
-      !formData.price ||
-      Number(formData.price) <= 0
-    ) {
+    if (!formData.price || Number(formData.price) <= 0) {
       setPageAlert({
         visible: true,
         variant: "warning",
         title: "Invalid Price",
-        description:
-          "Please enter a valid price greater than 0.",
+        description: "Please enter a valid price greater than 0.",
       });
 
       return;
     }
 
-    if (
-      activeTab === "meals" &&
-      !formData.portionSize.trim()
-    ) {
+    if (activeTab === "meals" && !formData.portionSize.trim()) {
       setPageAlert({
         visible: true,
         variant: "warning",
         title: "Portion Required",
-        description:
-          "Please enter the meal portion.",
+        description: "Please enter the meal portion.",
       });
 
       return;
@@ -527,19 +607,14 @@ export default function MenuPage() {
 
     if (
       activeTab === "meals" &&
-      (
-        !formData.preparationTimeInMinutes ||
-        Number(
-          formData.preparationTimeInMinutes,
-        ) < 0
-      )
+      (!formData.preparationTimeInMinutes ||
+        Number(formData.preparationTimeInMinutes) < 0)
     ) {
       setPageAlert({
         visible: true,
         variant: "warning",
         title: "Preparation Time Required",
-        description:
-          "Please enter a valid preparation time.",
+        description: "Please enter a valid preparation time.",
       });
 
       return;
@@ -548,57 +623,39 @@ export default function MenuPage() {
     try {
       setIsLoading(true);
 
-      const formDataToSend =
-        buildMenuFormData();
+      const formDataToSend = buildMenuFormData();
 
       /* =====================================================
          UPDATE
       ===================================================== */
 
       if (editingId !== null) {
-        await updateMenuItem(
-          formDataToSend,
-        );
+        await updateMenuItem(formDataToSend);
 
         setPageAlert({
           visible: true,
           variant: "success",
           title: "Menu Item Updated",
-          description:
-            "The menu item has been updated successfully.",
+          description: "The menu item has been updated successfully.",
         });
-      }
-
-      /* =====================================================
+      } else {
+        /* =====================================================
          CREATE
       ===================================================== */
-
-      else {
-        /*
-         * For a new item, if image is not selected,
-         * backend can receive no image field.
-         */
-        await createMenuItem(
-          formDataToSend,
-        );
+        await createMenuItem(formDataToSend);
 
         setPageAlert({
           visible: true,
           variant: "success",
           title: "Menu Item Created",
-          description:
-            "The menu item has been created successfully.",
+          description: "The menu item has been created successfully.",
         });
       }
 
       /*
-       * Reload the current category from the API.
-       * This guarantees that the table displays
-       * the actual database data.
+       * Reload current category
        */
-      await loadMenuItems(
-        activeTab === "coffee" ? 4 : 1,
-      );
+      await loadMenuItems(activeTab === "coffee" ? 4 : 1);
 
       closeModal();
     } catch (error) {
@@ -630,13 +687,10 @@ export default function MenuPage() {
      DELETE
   ========================================================= */
 
-  const handleDelete = async (
-    id: number,
-  ) => {
-    const confirmed =
-      window.confirm(
-        "Are you sure you want to delete this menu item?",
-      );
+  const handleDelete = async (id: number) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this menu item?",
+    );
 
     if (!confirmed) {
       return;
@@ -645,55 +699,36 @@ export default function MenuPage() {
     try {
       setIsLoading(true);
 
-      await deleteMenuItem(
-        id.toString(),
-      );
+      await deleteMenuItem(id.toString());
 
       /*
-       * Remove immediately from local state
-       * so UI responds quickly.
+       * Immediately remove from UI
        */
       if (activeTab === "coffee") {
-        setCoffeeItems((prev) =>
-          prev.filter(
-            (item) => item.id !== id,
-          ),
-        );
+        setCoffeeItems((prev) => prev.filter((item) => item.id !== id));
       } else {
-        setMealItems((prev) =>
-          prev.filter(
-            (item) => item.id !== id,
-          ),
-        );
+        setMealItems((prev) => prev.filter((item) => item.id !== id));
       }
 
       setPageAlert({
         visible: true,
         variant: "success",
         title: "Menu Item Deleted",
-        description:
-          "The menu item has been deleted successfully.",
+        description: "The menu item has been deleted successfully.",
       });
 
       /*
-       * Optional reload to ensure local state
-       * exactly matches the database.
+       * Reload from backend
        */
-      await loadMenuItems(
-        activeTab === "coffee" ? 4 : 1,
-      );
+      await loadMenuItems(activeTab === "coffee" ? 4 : 1);
     } catch (error) {
-      console.error(
-        "Failed to delete menu item:",
-        error,
-      );
+      console.error("Failed to delete menu item:", error);
 
       setPageAlert({
         visible: true,
         variant: "error",
         title: "Error Deleting Menu Item",
-        description:
-          "An error occurred while deleting the menu item.",
+        description: "An error occurred while deleting the menu item.",
       });
     } finally {
       setIsLoading(false);
@@ -704,15 +739,11 @@ export default function MenuPage() {
      TAB CHANGE
   ========================================================= */
 
-  const handleTabChange = (
-    tab: MenuTab,
-  ) => {
+  const handleTabChange = (tab: MenuTab) => {
     setActiveTab(tab);
     setSearch("");
 
-    loadMenuItems(
-      tab === "coffee" ? 4 : 1,
-    );
+    loadMenuItems(tab === "coffee" ? 4 : 1);
   };
 
   /* =========================================================
@@ -749,12 +780,10 @@ export default function MenuPage() {
             <CustomAlert
               alert={pageAlert}
               onClose={() =>
-                setPageAlert(
-                  (previous) => ({
-                    ...previous,
-                    visible: false,
-                  }),
-                )
+                setPageAlert((previous) => ({
+                  ...previous,
+                  visible: false,
+                }))
               }
             />
           </div>,
@@ -778,8 +807,7 @@ export default function MenuPage() {
               </h1>
 
               <p className="text-sm text-[#8A5A3C]">
-                Manage coffee, breakfast and other
-                meal items
+                Manage coffee, breakfast and other meal items
               </p>
             </div>
           </div>
@@ -802,9 +830,7 @@ export default function MenuPage() {
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
-              onClick={() =>
-                handleTabChange("coffee")
-              }
+              onClick={() => handleTabChange("coffee")}
               className={`flex h-12 cursor-pointer items-center justify-center gap-2 rounded-xl text-sm font-semibold transition ${
                 activeTab === "coffee"
                   ? "bg-gradient-to-r from-amber-500 to-[#7A3E18] text-white shadow-sm"
@@ -817,9 +843,7 @@ export default function MenuPage() {
 
             <button
               type="button"
-              onClick={() =>
-                handleTabChange("meals")
-              }
+              onClick={() => handleTabChange("meals")}
               className={`flex h-12 cursor-pointer items-center justify-center gap-2 rounded-xl text-sm font-semibold transition ${
                 activeTab === "meals"
                   ? "bg-gradient-to-r from-amber-500 to-[#7A3E18] text-white shadow-sm"
@@ -848,14 +872,10 @@ export default function MenuPage() {
               <p className="mt-0.5 text-xs text-[#9A6A4A]">
                 {activeTab === "coffee"
                   ? `${coffeeItems.length} coffee item${
-                      coffeeItems.length !== 1
-                        ? "s"
-                        : ""
+                      coffeeItems.length !== 1 ? "s" : ""
                     }`
                   : `${mealItems.length} meal item${
-                      mealItems.length !== 1
-                        ? "s"
-                        : ""
+                      mealItems.length !== 1 ? "s" : ""
                     }`}
               </p>
             </div>
@@ -869,9 +889,7 @@ export default function MenuPage() {
               <input
                 type="text"
                 value={search}
-                onChange={(e) =>
-                  setSearch(e.target.value)
-                }
+                onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search menu..."
                 className="h-11 w-full rounded-xl border border-amber-200 bg-white pl-10 pr-4 text-sm text-[#4A2410] outline-none transition placeholder:text-[#B9957E] focus:border-amber-500 focus:ring-4 focus:ring-amber-100"
               />
@@ -879,6 +897,7 @@ export default function MenuPage() {
           </div>
 
           {/* Desktop */}
+
           <div className="hidden overflow-x-auto md:block">
             {activeTab === "coffee" ? (
               <CoffeeTable
@@ -896,6 +915,7 @@ export default function MenuPage() {
           </div>
 
           {/* Mobile */}
+
           <div className="md:hidden">
             {activeTab === "coffee" ? (
               <CoffeeMobileCards
@@ -922,7 +942,7 @@ export default function MenuPage() {
         createPortal(
           <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#2D160A]/60 p-4 backdrop-blur-sm">
             <div className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-              {/* Header */}
+              {/* HEADER */}
 
               <div className="flex items-center justify-between border-b border-amber-100 px-6 py-5">
                 <div className="flex items-center gap-3">
@@ -936,9 +956,7 @@ export default function MenuPage() {
 
                   <div>
                     <h2 className="text-lg font-bold text-[#4A2410]">
-                      {editingId !== null
-                        ? "Edit Menu Item"
-                        : "Add Menu Item"}
+                      {editingId !== null ? "Edit Menu Item" : "Add Menu Item"}
                     </h2>
 
                     <p className="text-xs text-[#9A6A4A]">
@@ -958,30 +976,24 @@ export default function MenuPage() {
                 </button>
               </div>
 
-              {/* Body */}
+              {/* BODY */}
 
-              <form
-                onSubmit={handleSubmit}
-                className="overflow-y-auto"
-              >
+              <form onSubmit={handleSubmit} className="overflow-y-auto">
                 <div className="grid gap-6 p-6 lg:grid-cols-[1fr_280px]">
                   {/* LEFT */}
 
                   <div className="space-y-5">
-                    <FormField
-                      label="Name"
-                      required
-                    >
+                    {/* NAME */}
+
+                    <FormField label="Name" required>
                       <input
                         type="text"
                         value={formData.name}
                         onChange={(e) =>
-                          setFormData(
-                            (prev) => ({
-                              ...prev,
-                              name: e.target.value,
-                            }),
-                          )
+                          setFormData((prev) => ({
+                            ...prev,
+                            name: e.target.value,
+                          }))
                         }
                         placeholder={
                           activeTab === "coffee"
@@ -992,11 +1004,10 @@ export default function MenuPage() {
                       />
                     </FormField>
 
+                    {/* PRICE + PORTION */}
+
                     <div className="grid gap-5 sm:grid-cols-2">
-                      <FormField
-                        label="Price"
-                        required
-                      >
+                      <FormField label="Price" required>
                         <div className="relative">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-[#8A5A3C]">
                             LKR
@@ -1008,13 +1019,10 @@ export default function MenuPage() {
                             step="0.01"
                             value={formData.price}
                             onChange={(e) =>
-                              setFormData(
-                                (prev) => ({
-                                  ...prev,
-                                  price:
-                                    e.target.value,
-                                }),
-                              )
+                              setFormData((prev) => ({
+                                ...prev,
+                                price: e.target.value,
+                              }))
                             }
                             placeholder="0.00"
                             className={`${inputClass} pl-14`}
@@ -1022,25 +1030,24 @@ export default function MenuPage() {
                         </div>
                       </FormField>
 
-                      {activeTab ===
-                        "meals" && (
-                        <FormField
-                          label="Portion"
-                          required
-                        >
+                      {activeTab === "meals" && (
+                        <FormField label="Portion" required>
                           <input
                             type="text"
-                            value={
-                              formData.portionSize
-                            }
+                            value={formData.portionSize}
                             onChange={(e) =>
-                              setFormData(
-                                (prev) => ({
-                                  ...prev,
-                                  portion:
-                                    e.target.value,
-                                }),
-                              )
+                              setFormData((prev) => ({
+                                ...prev,
+
+                                /*
+                                 * FIX:
+                                 * was "portion"
+                                 *
+                                 * must be:
+                                 * "portionSize"
+                                 */
+                                portionSize: e.target.value,
+                              }))
                             }
                             placeholder="e.g. 1 person"
                             className={inputClass}
@@ -1049,246 +1056,167 @@ export default function MenuPage() {
                       )}
                     </div>
 
+                    {/* DESCRIPTION */}
+
                     <FormField label="Description">
                       <textarea
                         rows={4}
-                        value={
-                          formData.description
-                        }
+                        value={formData.description}
                         onChange={(e) =>
-                          setFormData(
-                            (prev) => ({
-                              ...prev,
-                              description:
-                                e.target.value,
-                            }),
-                          )
+                          setFormData((prev) => ({
+                            ...prev,
+                            description: e.target.value,
+                          }))
                         }
                         placeholder="Describe this menu item..."
-                        className={
-                          textareaClass
-                        }
+                        className={textareaClass}
                       />
                     </FormField>
+
+                    {/* FACTS */}
 
                     <FormField label="Facts">
                       <textarea
                         rows={3}
                         value={formData.facts}
                         onChange={(e) =>
-                          setFormData(
-                            (prev) => ({
-                              ...prev,
-                              facts:
-                                e.target.value,
-                            }),
-                          )
+                          setFormData((prev) => ({
+                            ...prev,
+                            facts: e.target.value,
+                          }))
                         }
                         placeholder="Interesting facts about this item..."
-                        className={
-                          textareaClass
-                        }
+                        className={textareaClass}
                       />
                     </FormField>
 
-                    {/* COFFEE INGREDIENTS */}
+                    {/* =================================================
+                        COFFEE INGREDIENTS
+                    ================================================= */}
 
-                    {activeTab ===
-                      "coffee" && (
+                    {activeTab === "coffee" && (
                       <FormField label="Ingredients">
                         <div className="relative">
                           <button
                             type="button"
                             onClick={() =>
-                              setShowIngredientDropdown(
-                                (prev) =>
-                                  !prev,
-                              )
+                              setShowIngredientDropdown((prev) => !prev)
                             }
                             className="flex min-h-11 w-full cursor-pointer items-center justify-between rounded-xl border border-amber-200 bg-white px-3 text-left text-sm text-[#5B321D] outline-none transition hover:border-amber-400 focus:border-amber-500"
                           >
                             <div className="flex flex-wrap gap-1.5">
-                              {formData
-                                .ingredients
-                                .length ===
-                              0 ? (
+                              {formData.ingredients.length === 0 ? (
                                 <span className="text-[#B9957E]">
                                   Select ingredients...
                                 </span>
                               ) : (
-                                formData.ingredients.map(
-                                  (
-                                    ingredient,
-                                  ) => (
-                                    <span
-                                      key={
-                                        ingredient
-                                      }
-                                      className="rounded-lg bg-amber-100 px-2 py-1 text-xs font-medium text-[#7A3E18]"
-                                    >
-                                      {
-                                        ingredient
-                                      }
-                                    </span>
-                                  ),
-                                )
+                                formData.ingredients.map((ingredient) => (
+                                  <span
+                                    key={ingredient}
+                                    className="rounded-lg bg-amber-100 px-2 py-1 text-xs font-medium text-[#7A3E18]"
+                                  >
+                                    {ingredient}
+                                  </span>
+                                ))
                               )}
                             </div>
 
-                            <ChevronDown
-                              size={17}
-                            />
+                            <ChevronDown size={17} />
                           </button>
 
                           {showIngredientDropdown && (
                             <div className="absolute left-0 right-0 top-full z-20 mt-2 max-h-56 overflow-y-auto rounded-xl border border-amber-200 bg-white p-2 shadow-xl">
-                              {ingredientOptions.map(
-                                (
-                                  ingredient,
-                                ) => {
-                                  const selected =
-                                    formData.ingredients.includes(
-                                      ingredient,
-                                    );
+                              {ingredientOptions.map((ingredient) => {
+                                const selected =
+                                  formData.ingredients.includes(ingredient);
 
-                                  return (
-                                    <button
-                                      key={
-                                        ingredient
-                                      }
-                                      type="button"
-                                      onClick={() =>
-                                        toggleIngredient(
-                                          ingredient,
-                                        )
-                                      }
-                                      className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm text-[#5B321D] hover:bg-amber-50"
-                                    >
-                                      {
-                                        ingredient
-                                      }
+                                return (
+                                  <button
+                                    key={ingredient}
+                                    type="button"
+                                    onClick={() => toggleIngredient(ingredient)}
+                                    className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm text-[#5B321D] hover:bg-amber-50"
+                                  >
+                                    {ingredient}
 
-                                      {selected && (
-                                        <Check
-                                          size={
-                                            16
-                                          }
-                                          className="text-[#7A3E18]"
-                                        />
-                                      )}
-                                    </button>
-                                  );
-                                },
-                              )}
+                                    {selected && (
+                                      <Check
+                                        size={16}
+                                        className="text-[#7A3E18]"
+                                      />
+                                    )}
+                                  </button>
+                                );
+                              })}
                             </div>
                           )}
                         </div>
                       </FormField>
                     )}
 
-                    {/* MEAL INCLUDES */}
+                    {/* =================================================
+                        MEAL INCLUDES
+                    ================================================= */}
 
-                    {activeTab ===
-                      "meals" && (
+                    {activeTab === "meals" && (
                       <>
                         <FormField label="Includes">
                           <div className="flex gap-2">
                             <input
                               type="text"
-                              value={
-                                includeText
-                              }
-                              onChange={(e) =>
-                                setIncludeText(
-                                  e.target
-                                    .value,
-                                )
-                              }
+                              value={includeText}
+                              onChange={(e) => setIncludeText(e.target.value)}
                               onKeyDown={(e) => {
-                                if (
-                                  e.key ===
-                                  "Enter"
-                                ) {
+                                if (e.key === "Enter") {
                                   e.preventDefault();
                                   addInclude();
                                 }
                               }}
                               placeholder="e.g. Toast with butter"
-                              className={
-                                inputClass
-                              }
+                              className={inputClass}
                             />
 
                             <button
                               type="button"
-                              onClick={
-                                addInclude
-                              }
+                              onClick={addInclude}
                               className="flex h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-amber-100 px-4 text-sm font-semibold text-[#7A3E18] hover:bg-amber-200"
                             >
-                              <Plus
-                                size={16}
-                              />
+                              <Plus size={16} />
                               Add
                             </button>
                           </div>
 
-                          {formData
-                            .includes
-                            .length >
-                            0 && (
+                          {formData.includes.length > 0 && (
                             <div className="mt-3 space-y-2">
-                              {formData.includes.map(
-                                (
-                                  include,
-                                  index,
-                                ) => (
-                                  <div
-                                    key={
-                                      index
-                                    }
-                                    className="flex items-start justify-between gap-3 rounded-xl border border-amber-100 bg-amber-50/60 px-3 py-2.5"
-                                  >
-                                    <div className="flex gap-2 text-sm text-[#6B422B]">
-                                      <span className="font-semibold text-[#A45C27]">
-                                        {index +
-                                          1}
-                                        .
-                                      </span>
+                              {formData.includes.map((include, index) => (
+                                <div
+                                  key={`${include}-${index}`}
+                                  className="flex items-start justify-between gap-3 rounded-xl border border-amber-100 bg-amber-50/60 px-3 py-2.5"
+                                >
+                                  <div className="flex gap-2 text-sm text-[#6B422B]">
+                                    <span className="font-semibold text-[#A45C27]">
+                                      {index + 1}.
+                                    </span>
 
-                                      <span>
-                                        {
-                                          include
-                                        }
-                                      </span>
-                                    </div>
-
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        removeInclude(
-                                          index,
-                                        )
-                                      }
-                                      className="shrink-0 cursor-pointer text-[#B56A50] hover:text-red-600"
-                                    >
-                                      <X
-                                        size={
-                                          16
-                                        }
-                                      />
-                                    </button>
+                                    <span>{include}</span>
                                   </div>
-                                ),
-                              )}
+
+                                  <button
+                                    type="button"
+                                    onClick={() => removeInclude(index)}
+                                    className="shrink-0 cursor-pointer text-[#B56A50] hover:text-red-600"
+                                  >
+                                    <X size={16} />
+                                  </button>
+                                </div>
+                              ))}
                             </div>
                           )}
                         </FormField>
 
-                        <FormField
-                          label="Preparation Time"
-                          required
-                        >
+                        {/* PREPARATION TIME */}
+
+                        <FormField label="Preparation Time" required>
                           <div className="relative">
                             <Clock
                               size={17}
@@ -1298,19 +1226,12 @@ export default function MenuPage() {
                             <input
                               type="number"
                               min="0"
-                              value={
-                                formData.preparationTimeInMinutes
-                              }
+                              value={formData.preparationTimeInMinutes}
                               onChange={(e) =>
-                                setFormData(
-                                  (prev) => ({
-                                    ...prev,
-                                    preparationTimeInMinutes:
-                                      e
-                                        .target
-                                        .value,
-                                  }),
-                                )
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  preparationTimeInMinutes: e.target.value,
+                                }))
                               }
                               placeholder="e.g. 15"
                               className={`${inputClass} pl-10 pr-20`}
@@ -1325,7 +1246,9 @@ export default function MenuPage() {
                     )}
                   </div>
 
-                  {/* IMAGE */}
+                  {/* =================================================
+                      IMAGE
+                  ================================================= */}
 
                   <div>
                     <FormField label="Image">
@@ -1333,9 +1256,7 @@ export default function MenuPage() {
                         {formData.imagePreview ? (
                           <div className="relative h-full min-h-[280px] w-full">
                             <img
-                              src={
-                                formData.imagePreview
-                              }
+                              src={formData.imagePreview}
                               alt="Preview"
                               className="h-full min-h-[280px] w-full object-cover"
                             />
@@ -1349,9 +1270,7 @@ export default function MenuPage() {
                         ) : (
                           <>
                             <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-[#7A3E18]">
-                              <ImageIcon
-                                size={25}
-                              />
+                              <ImageIcon size={25} />
                             </div>
 
                             <p className="text-sm font-semibold text-[#6B422B]">
@@ -1367,24 +1286,21 @@ export default function MenuPage() {
                         <input
                           type="file"
                           accept="image/png,image/jpeg,image/webp"
-                          onChange={
-                            handleImageChange
-                          }
+                          onChange={handleImageChange}
                           className="hidden"
                         />
                       </label>
                     </FormField>
 
-                    {/* MEAL INFO */}
+                    {/* =================================================
+                        MEAL INFO
+                    ================================================= */}
 
-                    {activeTab ===
-                      "meals" && (
+                    {activeTab === "meals" && (
                       <div className="mt-5 rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-4">
                         <div className="flex gap-3">
                           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-[#7A3E18]">
-                            <Utensils
-                              size={17}
-                            />
+                            <Utensils size={17} />
                           </div>
 
                           <div>
@@ -1393,56 +1309,43 @@ export default function MenuPage() {
                             </p>
 
                             <p className="mt-1 text-xs leading-5 text-[#9A6A4A]">
-                              Add the portion
-                              size,
-                              preparation
-                              time and
-                              individual
-                              items
-                              included
-                              with this
-                              meal.
+                              Add the portion size, preparation time and
+                              individual items included with this meal.
                             </p>
                           </div>
                         </div>
                       </div>
                     )}
 
-                    {/* COFFEE INFO */}
+                    {/* =================================================
+                        COFFEE INFO
+                    ================================================= */}
 
-                    {activeTab ===
-                      "coffee" &&
-                      formData.ingredients
-                        .length > 0 && (
+                    {activeTab === "coffee" &&
+                      formData.ingredients.length > 0 && (
                         <div className="mt-5 rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-4">
                           <p className="text-sm font-semibold text-[#5B321D]">
                             Selected Ingredients
                           </p>
 
                           <div className="mt-3 flex flex-wrap gap-2">
-                            {formData.ingredients.map(
-                              (
-                                ingredient,
-                              ) => (
-                                <span
-                                  key={
-                                    ingredient
-                                  }
-                                  className="rounded-lg bg-white px-2.5 py-1.5 text-xs font-medium text-[#7A3E18] shadow-sm ring-1 ring-amber-100"
-                                >
-                                  {
-                                    ingredient
-                                  }
-                                </span>
-                              ),
-                            )}
+                            {formData.ingredients.map((ingredient) => (
+                              <span
+                                key={ingredient}
+                                className="rounded-lg bg-white px-2.5 py-1.5 text-xs font-medium text-[#7A3E18] shadow-sm ring-1 ring-amber-100"
+                              >
+                                {ingredient}
+                              </span>
+                            ))}
                           </div>
                         </div>
                       )}
                   </div>
                 </div>
 
-                {/* FOOTER */}
+                {/* =================================================
+                    FOOTER
+                ================================================= */}
 
                 <div className="flex flex-col-reverse gap-3 border-t border-amber-100 bg-amber-50/40 px-6 py-4 sm:flex-row sm:justify-end">
                   <button
@@ -1458,9 +1361,7 @@ export default function MenuPage() {
                     disabled={isLoading}
                     className="h-11 cursor-pointer rounded-xl bg-gradient-to-r from-amber-500 to-[#7A3E18] px-6 text-sm font-semibold text-white shadow-sm transition hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {editingId !== null
-                      ? "Update Item"
-                      : "Save Item"}
+                    {editingId !== null ? "Update Item" : "Save Item"}
                   </button>
                 </div>
               </form>
@@ -1484,14 +1385,13 @@ function CustomAlert({
   onClose: () => void;
 }) {
   const styles = {
-    success:
-      "border-emerald-200 bg-emerald-50 text-emerald-800",
-    error:
-      "border-red-200 bg-red-50 text-red-800",
-    warning:
-      "border-amber-200 bg-amber-50 text-amber-800",
-    info:
-      "border-blue-200 bg-blue-50 text-blue-800",
+    success: "border-emerald-200 bg-emerald-50 text-emerald-800",
+
+    error: "border-red-200 bg-red-50 text-red-800",
+
+    warning: "border-amber-200 bg-amber-50 text-amber-800",
+
+    info: "border-blue-200 bg-blue-50 text-blue-800",
   };
 
   return (
@@ -1499,13 +1399,9 @@ function CustomAlert({
       className={`flex items-start gap-3 rounded-2xl border p-4 shadow-xl ${styles[alert.variant]}`}
     >
       <div className="min-w-0 flex-1">
-        <p className="font-semibold">
-          {alert.title}
-        </p>
+        <p className="font-semibold">{alert.title}</p>
 
-        <p className="mt-1 text-sm opacity-80">
-          {alert.description}
-        </p>
+        <p className="mt-1 text-sm opacity-80">{alert.description}</p>
       </div>
 
       <button
@@ -1541,14 +1437,14 @@ function CoffeeTable({
       <thead>
         <tr className="border-b border-amber-100 bg-amber-50/40">
           <th className={thClass}>Item</th>
+
           <th className={thClass}>Price</th>
+
           <th className={thClass}>Ingredients</th>
+
           <th className={thClass}>Description</th>
-          <th
-            className={`${thClass} text-right`}
-          >
-            Actions
-          </th>
+
+          <th className={`${thClass} text-right`}>Actions</th>
         </tr>
       </thead>
 
@@ -1562,9 +1458,7 @@ function CoffeeTable({
               <div className="flex items-center gap-3">
                 {item.image ? (
                   <img
-                    src={getBase64ImageSrc(
-                      item.image,
-                    )}
+                    src={getBase64ImageSrc(item.image)}
                     alt={item.name}
                     className="h-12 w-12 rounded-xl object-cover"
                   />
@@ -1579,39 +1473,31 @@ function CoffeeTable({
                     {item.name}
                   </p>
 
-                  <p className="text-xs text-[#A4775C]">
-                    Coffee
-                  </p>
+                  <p className="text-xs text-[#A4775C]">Coffee</p>
                 </div>
               </div>
             </td>
 
             <td className="px-5 py-4">
               <span className="rounded-lg bg-emerald-50 px-2.5 py-1.5 text-sm font-semibold text-emerald-700">
-                LKR{" "}
-                {item.price.toLocaleString()}
+                LKR {item.price.toLocaleString()}
               </span>
             </td>
 
             <td className="max-w-xs px-5 py-4">
               <div className="flex flex-wrap gap-1.5">
-                {item.ingredients
-                  .slice(0, 3)
-                  .map((x) => (
-                    <span
-                      key={x}
-                      className="rounded-md bg-amber-50 px-2 py-1 text-xs text-[#7A3E18]"
-                    >
-                      {x}
-                    </span>
-                  ))}
+                {item.ingredients.slice(0, 3).map((x) => (
+                  <span
+                    key={x}
+                    className="rounded-md bg-amber-50 px-2 py-1 text-xs text-[#7A3E18]"
+                  >
+                    {x}
+                  </span>
+                ))}
 
-                {item.ingredients.length >
-                  3 && (
+                {item.ingredients.length > 3 && (
                   <span className="text-xs text-[#A4775C]">
-                    +
-                    {item.ingredients
-                      .length - 3}
+                    +{item.ingredients.length - 3}
                   </span>
                 )}
               </div>
@@ -1619,19 +1505,14 @@ function CoffeeTable({
 
             <td className="max-w-sm px-5 py-4">
               <p className="truncate text-sm text-[#79543C]">
-                {item.description ||
-                  "—"}
+                {item.description || "—"}
               </p>
             </td>
 
             <td className="px-5 py-4">
               <ActionButtons
-                onEdit={() =>
-                  onEdit(item)
-                }
-                onDelete={() =>
-                  onDelete(item.id)
-                }
+                onEdit={() => onEdit(item)}
+                onDelete={() => onDelete(item.id)}
               />
             </td>
           </tr>
@@ -1663,21 +1544,18 @@ function MealTable({
       <thead>
         <tr className="border-b border-amber-100 bg-amber-50/40">
           <th className={thClass}>Item</th>
+
           <th className={thClass}>Price</th>
-          <th className={thClass}>
-            Preparation
-          </th>
-          <th className={thClass}>
-            Portion
-          </th>
-          <th className={thClass}>
-            Description
-          </th>
-          <th
-            className={`${thClass} text-right`}
-          >
-            Actions
-          </th>
+
+          <th className={thClass}>Preparation</th>
+
+          <th className={thClass}>Portion</th>
+
+          <th className={thClass}>Includes</th>
+
+          <th className={thClass}>Description</th>
+
+          <th className={`${thClass} text-right`}>Actions</th>
         </tr>
       </thead>
 
@@ -1691,9 +1569,7 @@ function MealTable({
               <div className="flex items-center gap-3">
                 {item.image ? (
                   <img
-                    src={getBase64ImageSrc(
-                      item.image,
-                    )}
+                    src={getBase64ImageSrc(item.image)}
                     alt={item.name}
                     className="h-12 w-12 rounded-xl object-cover"
                   />
@@ -1708,28 +1584,21 @@ function MealTable({
                     {item.name}
                   </p>
 
-                  <p className="text-xs text-[#A4775C]">
-                    Meal
-                  </p>
+                  <p className="text-xs text-[#A4775C]">Meal</p>
                 </div>
               </div>
             </td>
 
             <td className="px-5 py-4">
               <span className="rounded-lg bg-emerald-50 px-2.5 py-1.5 text-sm font-semibold text-emerald-700">
-                LKR{" "}
-                {item.price.toLocaleString()}
+                LKR {item.price.toLocaleString()}
               </span>
             </td>
 
             <td className="px-5 py-4">
               <div className="flex items-center gap-1.5 text-sm text-[#6B422B]">
                 <Clock size={15} />
-
-                {
-                  item.preparationTimeInMinutes
-                }{" "}
-                min
+                {item.preparationTimeInMinutes} min
               </div>
             </td>
 
@@ -1739,21 +1608,35 @@ function MealTable({
               </span>
             </td>
 
+            <td className="max-w-xs px-5 py-4">
+              <div className="flex flex-wrap gap-1.5">
+                {item.includes.slice(0, 3).map((include, index) => (
+                  <span
+                    key={`${include}-${index}`}
+                    className="rounded-md bg-amber-50 px-2 py-1 text-xs text-[#7A3E18]"
+                  >
+                    {include}
+                  </span>
+                ))}
+
+                {item.includes.length > 3 && (
+                  <span className="text-xs text-[#A4775C]">
+                    +{item.includes.length - 3}
+                  </span>
+                )}
+              </div>
+            </td>
+
             <td className="max-w-sm px-5 py-4">
               <p className="truncate text-sm text-[#79543C]">
-                {item.description ||
-                  "—"}
+                {item.description || "—"}
               </p>
             </td>
 
             <td className="px-5 py-4">
               <ActionButtons
-                onEdit={() =>
-                  onEdit(item)
-                }
-                onDelete={() =>
-                  onDelete(item.id)
-                }
+                onEdit={() => onEdit(item)}
+                onDelete={() => onDelete(item.id)}
               />
             </td>
           </tr>
@@ -1783,16 +1666,11 @@ function CoffeeMobileCards({
   return (
     <div className="divide-y divide-amber-100">
       {items.map((item) => (
-        <div
-          key={item.id}
-          className="p-4"
-        >
+        <div key={item.id} className="p-4">
           <div className="flex gap-3">
             {item.image ? (
               <img
-                src={getBase64ImageSrc(
-                  item.image,
-                )}
+                src={getBase64ImageSrc(item.image)}
                 alt={item.name}
                 className="h-16 w-16 shrink-0 rounded-xl object-cover"
               />
@@ -1810,32 +1688,25 @@ function CoffeeMobileCards({
                   </h3>
 
                   <p className="mt-1 text-sm font-semibold text-emerald-700">
-                    LKR{" "}
-                    {item.price.toLocaleString()}
+                    LKR {item.price.toLocaleString()}
                   </p>
                 </div>
 
                 <ActionButtons
-                  onEdit={() =>
-                    onEdit(item)
-                  }
-                  onDelete={() =>
-                    onDelete(item.id)
-                  }
+                  onEdit={() => onEdit(item)}
+                  onDelete={() => onDelete(item.id)}
                 />
               </div>
 
               <div className="mt-2 flex flex-wrap gap-1.5">
-                {item.ingredients.map(
-                  (x) => (
-                    <span
-                      key={x}
-                      className="rounded-md bg-amber-50 px-2 py-1 text-[11px] text-[#7A3E18]"
-                    >
-                      {x}
-                    </span>
-                  ),
-                )}
+                {item.ingredients.map((x) => (
+                  <span
+                    key={x}
+                    className="rounded-md bg-amber-50 px-2 py-1 text-[11px] text-[#7A3E18]"
+                  >
+                    {x}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
@@ -1871,16 +1742,11 @@ function MealMobileCards({
   return (
     <div className="divide-y divide-amber-100">
       {items.map((item) => (
-        <div
-          key={item.id}
-          className="p-4"
-        >
+        <div key={item.id} className="p-4">
           <div className="flex gap-3">
             {item.image ? (
               <img
-                src={getBase64ImageSrc(
-                  item.image,
-                )}
+                src={getBase64ImageSrc(item.image)}
                 alt={item.name}
                 className="h-16 w-16 shrink-0 rounded-xl object-cover"
               />
@@ -1898,36 +1764,40 @@ function MealMobileCards({
                   </h3>
 
                   <p className="mt-1 text-sm font-semibold text-emerald-700">
-                    LKR{" "}
-                    {item.price.toLocaleString()}
+                    LKR {item.price.toLocaleString()}
                   </p>
                 </div>
 
                 <ActionButtons
-                  onEdit={() =>
-                    onEdit(item)
-                  }
-                  onDelete={() =>
-                    onDelete(item.id)
-                  }
+                  onEdit={() => onEdit(item)}
+                  onDelete={() => onDelete(item.id)}
                 />
               </div>
 
               <div className="mt-2 flex flex-wrap gap-2">
                 <span className="rounded-md bg-amber-50 px-2 py-1 text-[11px] text-[#7A3E18]">
-                  {
-                    item.preparationTimeInMinutes
-                  }{" "}
-                  min
+                  {item.preparationTimeInMinutes} min
                 </span>
 
                 <span className="rounded-md bg-amber-50 px-2 py-1 text-[11px] text-[#7A3E18]">
-                  {item.portionSize ||
-                    "—"}
+                  {item.portionSize || "—"}
                 </span>
               </div>
             </div>
           </div>
+
+          {item.includes.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {item.includes.map((include, index) => (
+                <span
+                  key={`${include}-${index}`}
+                  className="rounded-md bg-amber-50 px-2 py-1 text-[11px] text-[#7A3E18]"
+                >
+                  {include}
+                </span>
+              ))}
+            </div>
+          )}
 
           {item.description && (
             <p className="mt-3 line-clamp-2 text-xs leading-5 text-[#79543C]">
@@ -1978,19 +1848,11 @@ function ActionButtons({
    EMPTY STATE
 ========================================================= */
 
-function EmptyState({
-  type,
-}: {
-  type: "coffee" | "meal";
-}) {
+function EmptyState({ type }: { type: "coffee" | "meal" }) {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-[#7A3E18]">
-        {type === "coffee" ? (
-          <Coffee size={25} />
-        ) : (
-          <Utensils size={25} />
-        )}
+        {type === "coffee" ? <Coffee size={25} /> : <Utensils size={25} />}
       </div>
 
       <h3 className="mt-4 text-sm font-semibold text-[#4A2410]">
@@ -1998,11 +1860,8 @@ function EmptyState({
       </h3>
 
       <p className="mt-1 max-w-sm text-xs text-[#9A6A4A]">
-        Add your first{" "}
-        {type === "coffee"
-          ? "coffee item"
-          : "meal item"}{" "}
-        to get started.
+        Add your first {type === "coffee" ? "coffee item" : "meal item"} to get
+        started.
       </p>
     </div>
   );
@@ -2026,11 +1885,7 @@ function FormField({
       <label className="mb-2 block text-sm font-semibold text-[#5B321D]">
         {label}
 
-        {required && (
-          <span className="ml-1 text-red-500">
-            *
-          </span>
-        )}
+        {required && <span className="ml-1 text-red-500">*</span>}
       </label>
 
       {children}
