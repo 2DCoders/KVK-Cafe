@@ -326,7 +326,7 @@ export default function Dayend() {
         format: "a4",
       });
 
-      const primaryColor: [number, number, number] = [30, 58, 138]; // Deep blue
+      const primaryColor: [number, number, number] = [122, 62, 24];
       const workingDateFormatted = formatDateDisplay(dayEndData?.currentDate);
       const printTimestamp = new Date().toLocaleString("en-GB");
 
@@ -337,7 +337,7 @@ export default function Dayend() {
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(16);
       doc.setFont("helvetica", "bold");
-      doc.text("KVK CAR WASH & AUTO CARE", 14, 11);
+      doc.text("KVK CAFE", 14, 11);
 
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
@@ -419,7 +419,7 @@ export default function Dayend() {
           ],
         ],
         headStyles: {
-          fillColor: [30, 58, 138],
+          fillColor: [122, 62, 24],
           textColor: [255, 255, 255],
           fontStyle: "bold",
           fontSize: 8.5,
@@ -480,7 +480,7 @@ export default function Dayend() {
           ["Net Cash to Bank / Safe Deposit", formatPrice(netBankDeposit), "To be securely deposited into bank/safe"],
         ],
         headStyles: {
-          fillColor: [30, 58, 138],
+          fillColor: [122, 62, 24],
           textColor: [255, 255, 255],
           fontStyle: "bold",
           fontSize: 8.5,
@@ -547,7 +547,7 @@ export default function Dayend() {
       {/* Floating Alert Portal */}
       {pageAlert.visible &&
         createPortal(
-          <div className="fixed right-4 top-4 z-[99999] w-[calc(100%-2rem)] max-w-md">
+          <div className="fixed right-4 top-4 z-99999 w-[calc(100%-2rem)] max-w-md">
             <CustomAlert
               alert={pageAlert}
               onClose={() =>
@@ -561,7 +561,7 @@ export default function Dayend() {
       {/* Global Loading Spinner Portal */}
       {(isLoading || isSubmitting || isExportingPdf) &&
         createPortal(
-          <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-99999 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm">
             <div className="flex flex-col items-center gap-3">
               <div className="h-14 w-14 animate-spin rounded-full border-4 border-white/30 border-t-white" />
               <p className="text-sm font-medium text-white">
@@ -580,7 +580,7 @@ export default function Dayend() {
         {/* Page Header */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-900 text-white shadow-sm shadow-blue-900/20">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#7A3E18] text-white shadow-sm shadow-amber-900/20">
               <CalendarCheck2 size={22} />
             </div>
             <div>
@@ -589,8 +589,8 @@ export default function Dayend() {
                   Day End Reconciliation
                 </h1>
                 {dayEndData?.currentDate && (
-                  <span className="hidden items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-900 sm:inline-flex">
-                    <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
+                  <span className="hidden items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-900 sm:inline-flex">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-600" />
                     {formatDateDisplay(dayEndData.currentDate)}
                   </span>
                 )}
@@ -606,7 +606,7 @@ export default function Dayend() {
               type="button"
               onClick={() => void handleFetchDayEndData()}
               disabled={isLoading}
-              className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-900 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-60"
+              className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-amber-900 hover:bg-amber-50 hover:text-amber-700 disabled:opacity-60"
             >
               <RefreshCcw
                 size={16}
@@ -619,7 +619,7 @@ export default function Dayend() {
               type="button"
               onClick={handleGeneratePdf}
               disabled={isLoading || isExportingPdf}
-              className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-900 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-60"
+              className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-amber-900 hover:bg-amber-50 hover:text-amber-700 disabled:opacity-60"
             >
               <Download size={16} />
               Print Report
@@ -630,7 +630,7 @@ export default function Dayend() {
                 type="button"
                 onClick={() => setShowConfirmModal(true)}
                 disabled={!canCloseDay || isSubmitting}
-                className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-900 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#7A3E18] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5A2E12] disabled:cursor-not-allowed disabled:bg-slate-300"
               >
                 <Lock size={16} />
                 Close Business Day
@@ -667,7 +667,7 @@ export default function Dayend() {
             value={formatShortPrice(financialSummary.totalRevenue)}
             subtitle="Combined daily income"
             icon={<TrendingUp size={20} />}
-            iconClassName="bg-blue-50 text-blue-900"
+            iconClassName="bg-amber-50 text-amber-900"
           />
           <SummaryCard
             title="Cash Revenue"
@@ -698,7 +698,7 @@ export default function Dayend() {
           <section className="lg:col-span-7 flex flex-col rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
             <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/70 p-4 sm:px-6">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-blue-900">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 text-amber-900">
                   <Banknote size={19} />
                 </div>
                 <div>
@@ -780,7 +780,7 @@ export default function Dayend() {
                     onChange={(e) => setActualCashCount(e.target.value)}
                     placeholder="0.00"
                     disabled={isPageLocked}
-                    className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-14 pr-4 text-right text-lg font-bold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+                    className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-14 pr-4 text-right text-lg font-bold text-slate-900 outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-100 disabled:cursor-not-allowed disabled:bg-slate-100"
                   />
                 </div>
               </div>
@@ -876,7 +876,7 @@ export default function Dayend() {
           <section className="lg:col-span-5 flex flex-col gap-6">
             <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
               <div className="flex items-center gap-2.5 border-b border-slate-200 bg-slate-50/70 p-4 sm:px-6">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-blue-900">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 text-amber-900">
                   <Vault size={19} />
                 </div>
                 <div>
@@ -912,7 +912,7 @@ export default function Dayend() {
                       className={`h-11 w-full rounded-xl border pl-14 pr-4 text-right text-sm font-semibold outline-none transition focus:ring-4 ${
                         !isHoldAmountValid
                           ? "border-red-400 bg-white focus:border-red-500 focus:ring-red-100"
-                          : "border-slate-200 bg-white focus:border-blue-500 focus:ring-blue-100"
+                          : "border-slate-200 bg-white focus:border-amber-500 focus:ring-amber-100"
                       }`}
                     />
                   </div>
@@ -928,17 +928,17 @@ export default function Dayend() {
                 </div>
 
                 {/* Net Safe Deposit Calculation Card */}
-                <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-4">
+                <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-blue-900">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-amber-900">
                         Net Cash to Safe / Bank
                       </p>
                       <p className="text-xs text-slate-500 mt-0.5">
                         Actual Count minus Tomorrow's Float
                       </p>
                     </div>
-                    <p className="text-lg font-bold text-blue-900">
+                    <p className="text-lg font-bold text-amber-900">
                       {formatPrice(netBankDeposit)}
                     </p>
                   </div>
@@ -955,7 +955,7 @@ export default function Dayend() {
                     onChange={(e) => setClosingNotes(e.target.value)}
                     placeholder="Add any additional shift or management notes..."
                     disabled={isPageLocked}
-                    className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-slate-100"
+                    className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-100 disabled:bg-slate-100"
                   />
                 </div>
 
@@ -965,7 +965,7 @@ export default function Dayend() {
                     type="button"
                     onClick={() => setShowConfirmModal(true)}
                     disabled={!canCloseDay || isSubmitting}
-                    className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-900 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                    className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#7A3E18] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5A2E12] disabled:cursor-not-allowed disabled:bg-slate-300"
                   >
                     <Lock size={17} />
                     Close Business Day
@@ -975,7 +975,7 @@ export default function Dayend() {
                     type="button"
                     onClick={handleGeneratePdf}
                     disabled={isLoading || isExportingPdf}
-                    className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-900 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-60"
+                    className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-amber-900 hover:bg-amber-50 hover:text-amber-700 disabled:opacity-60"
                   >
                     <Download size={17} />
                     Download Summary Report
@@ -1078,20 +1078,20 @@ function BreakdownCard({
     <div
       className={`rounded-2xl border p-4 transition ${
         highlight
-          ? "border-blue-200 bg-blue-50/70"
+          ? "border-amber-200 bg-amber-50/70"
           : "border-slate-200 bg-slate-50/60"
       }`}
     >
       <p
         className={`text-xs font-semibold ${
-          highlight ? "text-blue-900" : "text-slate-500"
+          highlight ? "text-amber-900" : "text-slate-500"
         }`}
       >
         {label}
       </p>
       <p
         className={`mt-1.5 text-lg font-bold truncate ${
-          highlight ? "text-blue-950" : "text-slate-900"
+          highlight ? "text-amber-950" : "text-slate-900"
         }`}
       >
         {value}
@@ -1112,7 +1112,7 @@ function CustomAlert({
     success: "border-emerald-200 bg-emerald-50 text-emerald-800",
     error: "border-red-200 bg-red-50 text-red-800",
     warning: "border-amber-200 bg-amber-50 text-amber-800",
-    info: "border-blue-200 bg-blue-50 text-blue-800",
+    info: "border-amber-200 bg-amber-50 text-amber-800",
   };
 
   return (
@@ -1178,7 +1178,7 @@ function CloseDayConfirmModal({
 }) {
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-9999 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget && !isSubmitting) onClose();
       }}
@@ -1187,7 +1187,7 @@ function CloseDayConfirmModal({
         {/* Modal Header */}
         <div className="flex items-start justify-between border-b border-slate-200 px-5 py-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-900 text-white">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#7A3E18] text-white">
               <Lock size={20} />
             </div>
             <div>
@@ -1264,8 +1264,8 @@ function CloseDayConfirmModal({
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="font-bold text-blue-900">Net Safe / Bank Deposit:</span>
-              <span className="text-base font-extrabold text-blue-900">
+              <span className="font-bold text-amber-900">Net Safe / Bank Deposit:</span>
+              <span className="text-base font-extrabold text-amber-900">
                 {formatPrice(netBankDeposit)}
               </span>
             </div>
@@ -1312,7 +1312,7 @@ function CloseDayConfirmModal({
             type="button"
             onClick={onConfirm}
             disabled={isSubmitting}
-            className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-900 px-5 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-slate-300"
+            className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#7A3E18] px-5 text-sm font-semibold text-white hover:bg-[#5A2E12] disabled:bg-slate-300"
           >
             {isSubmitting ? (
               <>
@@ -1352,7 +1352,7 @@ function DayEndSuccessModal({
   onContinue: () => void;
 }) {
   return createPortal(
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-10000 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-3xl bg-white p-6 sm:p-8 text-center shadow-2xl">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
           <CheckCircle2 size={36} />
@@ -1379,7 +1379,7 @@ function DayEndSuccessModal({
         <button
           type="button"
           onClick={onContinue}
-          className="mt-6 inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-900 px-5 text-sm font-semibold text-white transition hover:bg-blue-700"
+          className="mt-6 inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#7A3E18] px-5 text-sm font-semibold text-white transition hover:bg-[#5A2E12]"
         >
           Continue to Login
         </button>
