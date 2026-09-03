@@ -65,3 +65,16 @@ export const getMenuItems = async (category: any) => {
         throw error;
     }
 };
+
+export const getAllMenuItems = async () => {
+    try {
+        const response = await axios.get(CAFE_API_URL, {
+            headers: {
+                Authorization: `Bearer ${getToken()}`,
+            },
+        });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};

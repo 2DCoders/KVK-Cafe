@@ -1,4 +1,4 @@
-import { getAllCarPackages } from "@/services/carwash-packages-api";
+import { getAllMenuItems } from "@/services/cafe-menu-api";
 import { getPayments, pay } from "@/services/payments-api";
 
 import {
@@ -8,6 +8,7 @@ import {
   CarFront,
   Check,
   ChevronDown,
+  Coffee,
   CreditCard,
   Eye,
   Info,
@@ -33,20 +34,17 @@ import {
 } from "react";
 
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
 
 /* =========================================================
    Package / Service Types
    ========================================================= */
 
-type CarService = {
+type Food = {
   id: string;
-  title: string;
-  durationInMinutes: number;
+  name: string;
+  category: number;
   serviceCategory: number;
-  description: string;
   price: number;
-  features: string;
 };
 
 type CarPackage = {
@@ -57,11 +55,11 @@ type CarPackage = {
   basPrice: number;
   pricesWithoutDiscounts: number;
   isActive: boolean;
-  services: CarService[];
+  services: Food[];
 };
 
 type PackagesResponse = {
-  allServices: CarService[];
+  allServices: Food[];
   packagesWithServices: CarPackage[];
 };
 
@@ -214,7 +212,7 @@ export default function Payments() {
      ======================================================= */
 
   const [packages, setPackages] = useState<CarPackage[]>([]);
-  const [services, setServices] = useState<CarService[]>([]);
+  const [foods, setFoods] = useState<Food[]>([]);
 
   const [selectedPackageIds, setSelectedPackageIds] = useState<string[]>([]);
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
@@ -291,25 +289,15 @@ export default function Payments() {
      Load Packages + Services
      ========================================================= */
 
-  const getAllPackages = async () => {
+  const getAllFoods = async () => {
     try {
       setIsPackagesLoading(true);
 
-      const res: PackagesResponse = await getAllCarPackages();
+      const res = await getAllMenuItems();
 
-      setPackages(
-        Array.isArray(res?.packagesWithServices)
-          ? res.packagesWithServices
-          : [],
-      );
-
-      setServices(Array.isArray(res?.allServices) ? res.allServices : []);
+      setFoods(res);
     } catch (error) {
-      console.error("Error fetching packages:", error);
-
-      setPackages([]);
-      setServices([]);
-
+      setFoods([]);
       setPageAlert({
         visible: true,
         variant: "error",
@@ -329,8 +317,8 @@ export default function Payments() {
   const handleOpenAddPayment = async () => {
     setPageView("add");
 
-    if (packages.length === 0 && services.length === 0) {
-      await getAllPackages();
+    if (foods.length === 0) {
+      await getAllFoods();
     }
   };
 
@@ -540,8 +528,8 @@ export default function Payments() {
      ========================================================= */
 
   const selectedServices = useMemo(() => {
-    return services.filter((item) => selectedServiceIds.includes(item.id));
-  }, [services, selectedServiceIds]);
+    return foods.filter((item) => selectedServiceIds.includes(item.id));
+  }, [foods, selectedServiceIds]);
 
   /* =========================================================
      Selected Items
@@ -558,7 +546,7 @@ export default function Payments() {
     const serviceItems: SelectedItem[] = selectedServices.map((item) => ({
       id: item.id,
       type: "service",
-      title: item.title,
+      title: item.name,
       price: item.price,
     }));
 
@@ -589,65 +577,24 @@ export default function Payments() {
 
   const discountedTotal = Math.max(subTotal - discount, 0);
 
-  /* =========================================================
-     Package Search
-     ========================================================= */
-
-  const filteredPackages = useMemo(() => {
-    const search = selectorSearch.trim().toLowerCase();
-
-    const activePackages = packages.filter((item) => item.isActive);
-
-    if (!search) {
-      return activePackages;
-    }
-
-    return activePackages.filter((item) => {
-      const serviceNames = item.services
-        .map((service) => service.title)
-        .join(" ")
-        .toLowerCase();
-
-      return (
-        item.title.toLowerCase().includes(search) ||
-        item.description.toLowerCase().includes(search) ||
-        serviceNames.includes(search)
-      );
-    });
-  }, [packages, selectorSearch]);
 
   /* =========================================================
      Service Search
      ========================================================= */
 
-  const filteredServices = useMemo(() => {
+  const filteredFoods = useMemo(() => {
     const search = selectorSearch.trim().toLowerCase();
 
     if (!search) {
-      return services;
+      return foods;
     }
 
-    return services.filter((item) => {
+    return foods.filter((item) => {
       return (
-        item.title.toLowerCase().includes(search) ||
-        item.description.toLowerCase().includes(search)
+        item.name.toLowerCase().includes(search)
       );
     });
-  }, [services, selectorSearch]);
-
-  /* =========================================================
-     Selection
-     ========================================================= */
-
-  const togglePackage = (id: string) => {
-    setSelectedPackageIds((previous) => {
-      if (previous.includes(id)) {
-        return previous.filter((item) => item !== id);
-      }
-
-      return [...previous, id];
-    });
-  };
+  }, [foods, selectorSearch]);
 
   const toggleService = (id: string) => {
     setSelectedServiceIds((previous) => {
@@ -1350,9 +1297,9 @@ export default function Payments() {
 
                 <section className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm">
                   <SectionHeader
-                    icon={<Package size={19} />}
-                    title="Packages & Services"
-                    description="Select one or multiple packages and individual services."
+                    icon={<Coffee size={19} />}
+                    title="Foods & Drinks"
+                    description="Select one or multiple foods and drinks for the customer order."
                   />
 
                   <div className="p-5">
@@ -1384,7 +1331,7 @@ export default function Payments() {
                             ? `${selectedItems.length} item${
                                 selectedItems.length > 1 ? "s" : ""
                               } selected`
-                            : "Select packages or services"}
+                            : "Select foods or drinks"}
                         </span>
 
                         <ChevronDown
@@ -1412,59 +1359,13 @@ export default function Payments() {
                                 onChange={(event) =>
                                   setSelectorSearch(event.target.value)
                                 }
-                                placeholder="Search packages or services..."
+                                placeholder="Search foods or drinks..."
                                 className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-amber-500 focus:bg-white focus:ring-4 focus:ring-amber-100"
                               />
                             </div>
                           </div>
 
                           <div className="max-h-[430px] overflow-y-auto">
-                            {/* Packages */}
-
-                            <div className="border-b border-slate-100">
-                              <div className="sticky top-0 z-10 flex items-center justify-between bg-slate-50 px-4 py-2.5">
-                                <div className="flex items-center gap-2">
-                                  <Package
-                                    size={15}
-                                    className="text-amber-900"
-                                  />
-
-                                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                                    Packages
-                                  </span>
-                                </div>
-
-                                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-900">
-                                  {filteredPackages.length}
-                                </span>
-                              </div>
-
-                              {filteredPackages.length > 0 ? (
-                                filteredPackages.map((item) => {
-                                  const selected = selectedPackageIds.includes(
-                                    item.id,
-                                  );
-
-                                  return (
-                                    <PackageSelectorItem
-                                      key={item.id}
-                                      item={item}
-                                      selected={selected}
-                                      formatPrice={formatPrice}
-                                      onSelect={() => togglePackage(item.id)}
-                                      onInfo={() =>
-                                        setSelectedInfoPackage(item)
-                                      }
-                                    />
-                                  );
-                                })
-                              ) : (
-                                <DropdownEmpty text="No packages found." />
-                              )}
-                            </div>
-
-                            {/* Services */}
-
                             <div>
                               <div className="sticky top-0 z-10 flex items-center justify-between bg-slate-50 px-4 py-2.5">
                                 <div className="flex items-center gap-2">
@@ -1474,17 +1375,17 @@ export default function Payments() {
                                   />
 
                                   <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                                    Individual Services
+                                    Foods & Drinks
                                   </span>
                                 </div>
 
                                 <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-600">
-                                  {filteredServices.length}
+                                  {filteredFoods.length}
                                 </span>
                               </div>
 
-                              {filteredServices.length > 0 ? (
-                                filteredServices.map((item) => {
+                              {filteredFoods.length > 0 ? (
+                                filteredFoods.map((item) => {
                                   const selected = selectedServiceIds.includes(
                                     item.id,
                                   );
@@ -1492,8 +1393,7 @@ export default function Payments() {
                                   return (
                                     <SelectorItem
                                       key={item.id}
-                                      title={item.title}
-                                      description={item.description}
+                                      title={item.name}
                                       price={formatPrice(item.price)}
                                       selected={selected}
                                       onClick={() => toggleService(item.id)}
@@ -2196,12 +2096,9 @@ function PackageInfoModal({
 
                     <div>
                       <p className="font-semibold text-slate-900">
-                        {service.title}
+                        {service.name}
                       </p>
 
-                      <p className="mt-1 text-xs leading-5 text-slate-500">
-                        {service.description}
-                      </p>
                     </div>
                   </div>
 
@@ -2284,13 +2181,11 @@ function InputField({
 
 function SelectorItem({
   title,
-  description,
   price,
   selected,
   onClick,
 }: {
   title: string;
-  description: string;
   price: string;
   selected: boolean;
   onClick: () => void;
@@ -2315,10 +2210,6 @@ function SelectorItem({
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-slate-800">{title}</p>
-
-        <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">
-          {description}
-        </p>
       </div>
 
       <p className="shrink-0 text-sm font-bold text-emerald-600">{price}</p>
