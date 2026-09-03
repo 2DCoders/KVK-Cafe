@@ -5,15 +5,12 @@ import {
   ArrowLeft,
   BadgePercent,
   Banknote,
-  CarFront,
   Check,
   ChevronDown,
   Coffee,
   CreditCard,
   Eye,
-  Info,
   Loader2,
-  Package,
   Plus,
   ReceiptText,
   RefreshCcw,
@@ -36,59 +33,36 @@ import {
 import { createPortal } from "react-dom";
 
 /* =========================================================
-   Package / Service Types
-   ========================================================= */
+  Cafe Menu Types
+  ========================================================= */
 
 type Food = {
   id: string;
   name: string;
   category: number;
-  serviceCategory: number;
   price: number;
-};
-
-type CarPackage = {
-  id: string;
-  title: string;
-  description: string;
-  durationInMinutes: number;
-  basPrice: number;
-  pricesWithoutDiscounts: number;
-  isActive: boolean;
-  services: Food[];
-};
-
-type PackagesResponse = {
-  allServices: Food[];
-  packagesWithServices: CarPackage[];
 };
 
 /* =========================================================
    Payment Response Types
    ========================================================= */
 
-type PaymentPackage = {
-  carWashPackageId: string;
-  packageName: string;
-  packagePrice: number;
-};
-
-type PaymentService = {
-  carWashServiceId: string;
-  serviceName: string;
-  servicePrice: number;
+type PaymentOrderItem = {
+  menuId: string;
+  menuName: string;
+  quantity: number;
+  price: number;
+  discount: number;
 };
 
 type PaymentRecord = {
-  carWashOrderId: string;
+  id?: string;
+  cafeOrderId?: string;
   orderNumber: string;
   orderDate: string;
 
   customerName: string;
   customerPhone: string;
-
-  vehicleType: number;
-  vehicleNumber: string;
 
   totalMinutesSpent: number;
 
@@ -99,10 +73,9 @@ type PaymentRecord = {
   isPaid: boolean;
 
   paymentMethod: number;
-  carWashOrderStatus: number;
-
-  packages: PaymentPackage[];
-  services: PaymentService[];
+  orderType: number;
+  orderStatus?: number;
+  orderItems?: PaymentOrderItem[];
 };
 
 /* =========================================================
@@ -112,43 +85,25 @@ type PaymentRecord = {
 type PaymentForm = {
   customerName: string;
   customerPhone: string;
-  vehicleType: 1 | 2 | 3 | 4 | 5 | 6;
-  VehicleNumber: string;
+  orderType: 1 | 2 | 3 | 4 | 5 | 6;
+  tableNumber: string;
+  address: string;
+  deliveryInstructions: string;
   discount: string;
   paymentMethod: 1 | 2;
 };
 
-const VehicleType = {
-  Car: 1,
-  Truck: 2,
-  Van: 3,
-  Jeep: 4,
-  Lorry: 5,
-  Bike: 6,
+const OrderType = {
+  DineIn: 1,
+  TakeAway: 2,
 };
 
-const vehicleTypes = [
-  { value: VehicleType.Car, label: "Car" },
-  { value: VehicleType.Truck, label: "Truck" },
-  { value: VehicleType.Van, label: "Van" },
-  { value: VehicleType.Jeep, label: "Jeep" },
-  { value: VehicleType.Lorry, label: "Lorry" },
-  { value: VehicleType.Bike, label: "Bike" },
+const OrderTypes = [
+  { value: OrderType.DineIn, label: "Dine In" },
+  { value: OrderType.TakeAway, label: "Take Away" },
 ];
 
-type SelectedItem =
-  | {
-      id: string;
-      type: "package";
-      title: string;
-      price: number;
-    }
-  | {
-      id: string;
-      type: "service";
-      title: string;
-      price: number;
-    };
+type SelectedItem = Food;
 
 type AlertState = {
   visible: boolean;
@@ -164,8 +119,10 @@ type AlertState = {
 const initialForm: PaymentForm = {
   customerName: "",
   customerPhone: "",
-  vehicleType: 1,
-  VehicleNumber: "",
+  orderType: 1,
+  tableNumber: "",
+  address: "",
+  deliveryInstructions: "",
   discount: "0",
 
   // 1 = Cash
@@ -173,10 +130,8 @@ const initialForm: PaymentForm = {
   paymentMethod: 1,
 };
 
-const getVehicleTypeName = (vehicleType: number) => {
-  return (
-    vehicleTypes.find((vehicle) => vehicle.value === vehicleType)?.label ?? "-"
-  );
+const getOrderTypeName = (orderType: number) => {
+  return OrderTypes.find((order) => order.value === orderType)?.label ?? "-";
 };
 
 /* =========================================================
@@ -208,14 +163,12 @@ export default function Payments() {
   );
 
   /* =======================================================
-     Packages / Services
+    Menu Items
      ======================================================= */
 
-  const [packages, setPackages] = useState<CarPackage[]>([]);
   const [foods, setFoods] = useState<Food[]>([]);
 
-  const [selectedPackageIds, setSelectedPackageIds] = useState<string[]>([]);
-  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
+  const [selectedIds, setselectedIds] = useState<string[]>([]);
 
   /* =======================================================
      Payment Form
@@ -223,14 +176,11 @@ export default function Payments() {
 
   const [form, setForm] = useState<PaymentForm>(initialForm);
 
-  const [isPackagesLoading, setIsPackagesLoading] = useState(false);
+  const [isFoodsLoading, setIsFoodsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
   const [selectorSearch, setSelectorSearch] = useState("");
-
-  const [selectedInfoPackage, setSelectedInfoPackage] =
-    useState<CarPackage | null>(null);
 
   const [pageAlert, setPageAlert] = useState<AlertState>({
     visible: false,
@@ -273,8 +223,7 @@ export default function Payments() {
         visible: true,
         variant: "error",
         title: "Unable to load payments",
-        description:
-          "An error occurred while loading cafe payment records.",
+        description: "An error occurred while loading cafe payment records.",
       });
     } finally {
       setIsPaymentsLoading(false);
@@ -286,12 +235,12 @@ export default function Payments() {
   }, []);
 
   /* =========================================================
-     Load Packages + Services
+    Load Menu Items
      ========================================================= */
 
   const getAllFoods = async () => {
     try {
-      setIsPackagesLoading(true);
+      setIsFoodsLoading(true);
 
       const res = await getAllMenuItems();
 
@@ -302,11 +251,10 @@ export default function Payments() {
         visible: true,
         variant: "error",
         title: "Unable to load data",
-        description:
-          "An error occurred while loading cafe payment records.",
+        description: "An error occurred while loading cafe payment records.",
       });
     } finally {
-      setIsPackagesLoading(false);
+      setIsFoodsLoading(false);
     }
   };
 
@@ -329,7 +277,6 @@ export default function Payments() {
   const handleBackToPayments = () => {
     setPageView("list");
     setIsSelectorOpen(false);
-    setSelectedInfoPackage(null);
   };
 
   /* =========================================================
@@ -435,13 +382,8 @@ export default function Payments() {
     }
 
     return payments.filter((payment) => {
-      const packageNames = payment.packages
-        ?.map((item) => item.packageName)
-        .join(" ")
-        .toLowerCase();
-
-      const serviceNames = payment.services
-        ?.map((item) => item.serviceName)
+      const itemNames = payment.orderItems
+        ?.map((item) => item.menuId)
         .join(" ")
         .toLowerCase();
 
@@ -449,9 +391,7 @@ export default function Payments() {
         payment.orderNumber?.toLowerCase().includes(search) ||
         payment.customerName?.toLowerCase().includes(search) ||
         payment.customerPhone?.toLowerCase().includes(search) ||
-        payment.vehicleNumber?.toLowerCase().includes(search) ||
-        packageNames?.includes(search) ||
-        serviceNames?.includes(search) ||
+        itemNames?.includes(search) ||
         String(payment.discountedTotalAmount).includes(search)
       );
     });
@@ -515,68 +455,34 @@ export default function Payments() {
       );
   }, [payments]);
 
-  /* =========================================================
-     Selected Packages
-     ========================================================= */
-
-  const selectedPackages = useMemo(() => {
-    return packages.filter((item) => selectedPackageIds.includes(item.id));
-  }, [packages, selectedPackageIds]);
-
-  /* =========================================================
-     Selected Services
-     ========================================================= */
-
-  const selectedServices = useMemo(() => {
-    return foods.filter((item) => selectedServiceIds.includes(item.id));
-  }, [foods, selectedServiceIds]);
+  const selectedFoods = useMemo(() => {
+    return foods.filter((item) => selectedIds.includes(item.id));
+  }, [foods, selectedIds]);
 
   /* =========================================================
      Selected Items
      ========================================================= */
 
   const selectedItems: SelectedItem[] = useMemo(() => {
-    const packageItems: SelectedItem[] = selectedPackages.map((item) => ({
-      id: item.id,
-      type: "package",
-      title: item.title,
-      price: item.basPrice,
-    }));
-
-    const serviceItems: SelectedItem[] = selectedServices.map((item) => ({
-      id: item.id,
-      type: "service",
-      title: item.name,
-      price: item.price,
-    }));
-
-    return [...packageItems, ...serviceItems];
-  }, [selectedPackages, selectedServices]);
+    return selectedFoods;
+  }, [selectedFoods]);
 
   /* =========================================================
      Form Totals
      ========================================================= */
 
-  const packageTotal = useMemo(() => {
-    return selectedPackages.reduce(
-      (total, currentPackage) => total + currentPackage.basPrice,
-      0,
-    );
-  }, [selectedPackages]);
-
   const serviceTotal = useMemo(() => {
-    return selectedServices.reduce(
+    return selectedFoods.reduce(
       (total, currentService) => total + currentService.price,
       0,
     );
-  }, [selectedServices]);
+  }, [selectedFoods]);
 
-  const subTotal = packageTotal + serviceTotal;
+  const subTotal = serviceTotal;
 
   const discount = Math.max(Number(form.discount) || 0, 0);
 
   const discountedTotal = Math.max(subTotal - discount, 0);
-
 
   /* =========================================================
      Service Search
@@ -590,14 +496,12 @@ export default function Payments() {
     }
 
     return foods.filter((item) => {
-      return (
-        item.name.toLowerCase().includes(search)
-      );
+      return item.name.toLowerCase().includes(search);
     });
   }, [foods, selectorSearch]);
 
   const toggleService = (id: string) => {
-    setSelectedServiceIds((previous) => {
+    setselectedIds((previous) => {
       if (previous.includes(id)) {
         return previous.filter((item) => item !== id);
       }
@@ -607,32 +511,21 @@ export default function Payments() {
   };
 
   const removeSelectedItem = (item: SelectedItem) => {
-    if (item.type === "package") {
-      setSelectedPackageIds((previous) =>
-        previous.filter((id) => id !== item.id),
-      );
-
-      return;
-    }
-
-    setSelectedServiceIds((previous) =>
-      previous.filter((id) => id !== item.id),
-    );
+    setselectedIds((previous) => previous.filter((id) => id !== item.id));
   };
 
   const clearSelection = () => {
-    setSelectedPackageIds([]);
-    setSelectedServiceIds([]);
+    setselectedIds([]);
   };
 
   /* =========================================================
      Form Change
      ========================================================= */
 
-  const handleChange = (field: keyof PaymentForm, value: string | 1 | 2) => {
+  const handleChange = (field: keyof PaymentForm, value: string | number) => {
     setForm((previous) => ({
       ...previous,
-      [field]: value,
+      [field]: value as PaymentForm[typeof field],
     }));
   };
 
@@ -643,19 +536,17 @@ export default function Payments() {
   const resetPaymentForm = () => {
     setForm(initialForm);
 
-    setSelectedPackageIds([]);
-    setSelectedServiceIds([]);
+    setselectedIds([]);
 
     setSelectorSearch("");
     setIsSelectorOpen(false);
-    setSelectedInfoPackage(null);
   };
 
   /* =========================================================
      Handle Pay
      ========================================================= */
 
-  const handlePay = async (paymentData: FormData) => {
+  const handlePay = async (paymentData: any) => {
     try {
       setIsSubmitting(true);
 
@@ -712,7 +603,7 @@ export default function Payments() {
       return;
     }
 
-    if (selectedPackageIds.length === 0 && selectedServiceIds.length === 0) {
+    if (selectedIds.length === 0) {
       setPageAlert({
         visible: true,
         variant: "warning",
@@ -745,38 +636,29 @@ export default function Payments() {
       return;
     }
 
-    const payload = new FormData();
+    const body = {
+      CustomerName: form.customerName.trim(),
+      CustomerPhone: form.customerPhone.trim(),
+      totalMinutesSpent: 0,
+      isPaid: true,
+      paymentMethod: form.paymentMethod,
+      orderType: form.orderType,
+      remark: "",
+      address: form.address.trim(),
+      deliveryInstructions: form.deliveryInstructions.trim(),
+      deliveryTime: "",
+      deliveryPerson: "",
+      deliveryPersonPhone: "",
+      tableNumber: form.tableNumber.trim(),
+      orderItems: selectedIds.map((id) => ({
+        menuId: id,
+        quantity: 1,
+        price: foods.find((item) => item.id === id)?.price || 0,
+        discount,
+      })),
+    };
 
-    payload.append("CustomerName", form.customerName.trim());
-    payload.append("CustomerPhone", form.customerPhone.trim());
-
-    if (form.vehicleType) {
-      payload.append("VehicleType", form.vehicleType.toString());
-    }
-
-    payload.append("VehicleNumber", form.VehicleNumber.trim());
-
-    payload.append("SubTotalAmount", String(subTotal));
-    payload.append("Discount", String(discount));
-    payload.append("DiscountedTotalAmount", String(discountedTotal));
-
-    payload.append("IsPaid", "true");
-
-    // Card = 2
-    // Cash = 1
-    payload.append("PaymentMethod", String(form.paymentMethod));
-
-    payload.append("CarWashOrderStatus", "1");
-
-    selectedPackageIds.forEach((id) => {
-      payload.append("PackageIds", id);
-    });
-
-    selectedServiceIds.forEach((id) => {
-      payload.append("ServicesIds", id);
-    });
-
-    await handlePay(payload);
+    await handlePay(body);
   };
 
   /* =========================================================
@@ -805,7 +687,7 @@ export default function Payments() {
 
       {/* Loading */}
 
-      {(isPaymentsLoading || isPackagesLoading || isSubmitting) &&
+      {(isPaymentsLoading || isFoodsLoading || isSubmitting) &&
         createPortal(
           <div className="fixed inset-0 z-[99998] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm">
             <div className="flex flex-col items-center gap-3">
@@ -815,23 +697,13 @@ export default function Payments() {
                 {isSubmitting
                   ? "Processing payment..."
                   : pageView === "add"
-                    ? "Loading packages..."
+                    ? "Loading foods..."
                     : "Loading payments..."}
               </p>
             </div>
           </div>,
           document.body,
         )}
-
-      {/* Package Info */}
-
-      {selectedInfoPackage && (
-        <PackageInfoModal
-          packageItem={selectedInfoPackage}
-          formatPrice={formatPrice}
-          onClose={() => setSelectedInfoPackage(null)}
-        />
-      )}
 
       {/* Payment Details */}
 
@@ -877,9 +749,7 @@ export default function Payments() {
                 onClick={() => window.location.reload()}
                 className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-amber-900 hover:bg-amber-100 hover:text-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <RefreshCcw
-                  size={16}
-                />
+                <RefreshCcw size={16} />
                 Refresh
               </button>
 
@@ -945,7 +815,7 @@ export default function Payments() {
                     setPaymentSearch(event.target.value);
                     setCurrentPage(1);
                   }}
-                  placeholder="Search order, customer, phone or vehicle..."
+                  placeholder="Search order, customer, phone or food..."
                   className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-amber-500 focus:bg-white focus:ring-4 focus:ring-amber-100"
                 />
               </div>
@@ -970,7 +840,7 @@ export default function Payments() {
 
                     <TableHeading>Customer</TableHeading>
 
-                    <TableHeading>Vehicle</TableHeading>
+                    <TableHeading>Order Type</TableHeading>
 
                     <TableHeading>Payment</TableHeading>
 
@@ -987,7 +857,11 @@ export default function Payments() {
                     paginatedPayments.map((payment) => {
                       return (
                         <tr
-                          key={payment.carWashOrderId}
+                          key={
+                            payment.cafeOrderId ??
+                            payment.id ??
+                            payment.orderNumber
+                          }
                           className="transition hover:bg-slate-50/80"
                         >
                           {/* Order */}
@@ -1018,15 +892,15 @@ export default function Payments() {
                             </p>
                           </td>
 
-                          {/* Vehicle */}
+                          {/* Order type */}
 
                           <td className="px-5 py-4">
                             <p className="text-sm font-semibold text-slate-700">
-                              {payment.vehicleNumber || "-"}
+                              {getOrderTypeName(payment.orderType)}
                             </p>
 
                             <p className="mt-0.5 text-xs text-slate-500">
-                              Type: {getVehicleTypeName(payment.vehicleType)}
+                              {payment.orderItems?.length ?? 0} items
                             </p>
                           </td>
 
@@ -1083,12 +957,15 @@ export default function Payments() {
             <div className="divide-y divide-slate-100 md:hidden">
               {paginatedPayments.length > 0 ? (
                 paginatedPayments.map((payment) => {
-                  const totalItems =
-                    (payment.packages?.length ?? 0) +
-                    (payment.services?.length ?? 0);
+                  const totalItems = payment.orderItems?.length ?? 0;
 
                   return (
-                    <article key={payment.carWashOrderId} className="p-4">
+                    <article
+                      key={
+                        payment.cafeOrderId ?? payment.id ?? payment.orderNumber
+                      }
+                      className="p-4"
+                    >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="font-bold text-slate-900">
@@ -1116,8 +993,8 @@ export default function Payments() {
                         />
 
                         <MobileInfo
-                          label="Vehicle"
-                          value={getVehicleTypeName(payment.vehicleType)}
+                          label="Order type"
+                          value={getOrderTypeName(payment.orderType)}
                         />
 
                         <MobileInfo label="Items" value={`${totalItems}`} />
@@ -1130,7 +1007,7 @@ export default function Payments() {
 
                       <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
                         <OrderStatusBadge
-                          status={payment.carWashOrderStatus}
+                          status={payment.orderStatus ?? 1}
                           isPaid={payment.isPaid}
                         />
 
@@ -1293,7 +1170,7 @@ export default function Payments() {
               {/* LEFT */}
 
               <div className="space-y-6">
-                {/* Packages + Services */}
+                {/* Foods and drinks */}
 
                 <section className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm">
                   <SectionHeader
@@ -1369,7 +1246,7 @@ export default function Payments() {
                             <div>
                               <div className="sticky top-0 z-10 flex items-center justify-between bg-slate-50 px-4 py-2.5">
                                 <div className="flex items-center gap-2">
-                                  <CarFront
+                                  <Coffee
                                     size={15}
                                     className="text-amber-900"
                                   />
@@ -1386,7 +1263,7 @@ export default function Payments() {
 
                               {filteredFoods.length > 0 ? (
                                 filteredFoods.map((item) => {
-                                  const selected = selectedServiceIds.includes(
+                                  const selected = selectedIds.includes(
                                     item.id,
                                   );
 
@@ -1401,7 +1278,7 @@ export default function Payments() {
                                   );
                                 })
                               ) : (
-                                <DropdownEmpty text="No services found." />
+                                <DropdownEmpty text="No foods found." />
                               )}
                             </div>
                           </div>
@@ -1429,59 +1306,25 @@ export default function Payments() {
 
                         <div className="space-y-2">
                           {selectedItems.map((item) => {
-                            const selectedPackage =
-                              item.type === "package"
-                                ? packages.find(
-                                    (currentPackage) =>
-                                      currentPackage.id === item.id,
-                                  )
-                                : undefined;
-
                             return (
                               <div
-                                key={`${item.type}-${item.id}`}
+                                key={item.id}
                                 className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3"
                               >
                                 <div className="flex min-w-0 items-center gap-3">
                                   <div
-                                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-                                      item.type === "package"
-                                        ? "bg-amber-100 text-amber-900"
-                                        : "bg-slate-200 text-slate-600"
-                                    }`}
+                                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${"bg-amber-100 text-amber-900"}`}
                                   >
-                                    {item.type === "package" ? (
-                                      <Package size={17} />
-                                    ) : (
-                                      <CarFront size={17} />
-                                    )}
+                                    <Coffee size={17} />
                                   </div>
 
                                   <div className="min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <p className="truncate text-sm font-semibold text-slate-800">
-                                        {item.title}
-                                      </p>
+                                    <p className="truncate text-sm font-semibold text-slate-800">
+                                      {item.name}
+                                    </p>
 
-                                      {selectedPackage && (
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            setSelectedInfoPackage(
-                                              selectedPackage,
-                                            )
-                                          }
-                                          className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md text-amber-700 hover:bg-amber-100"
-                                        >
-                                          <Info size={14} />
-                                        </button>
-                                      )}
-                                    </div>
-
-                                    <p className="mt-0.5 text-xs capitalize text-slate-500">
-                                      {item.type === "package"
-                                        ? `${selectedPackage?.services.length ?? 0} included services`
-                                        : "Individual service"}
+                                    <p className="mt-0.5 text-xs text-slate-500">
+                                      Food or drink
                                     </p>
                                   </div>
                                 </div>
@@ -1528,7 +1371,7 @@ export default function Payments() {
                   <SectionHeader
                     icon={<User size={19} />}
                     title="Customer Details"
-                    description="Optional customer and vehicle information."
+                    description="Add customer and order information."
                   />
 
                   <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
@@ -1554,32 +1397,25 @@ export default function Payments() {
 
                     <div>
                       <label className="mb-1.5 block text-sm font-semibold text-slate-700">
-                        Vehicle Type
+                        Order Type
                       </label>
 
                       <select
-                        value={form.vehicleType}
+                        value={form.orderType}
                         onChange={(event) =>
-                          handleChange("vehicleType", event.target.value)
+                          handleChange("orderType", Number(event.target.value))
                         }
                         className="h-11 cursor-pointer w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-100"
                       >
-                        <option value="">Select vehicle type</option>
+                        <option value="">Select order type</option>
 
-                        {vehicleTypes.map((vehicle) => (
-                          <option key={vehicle.value} value={vehicle.value}>
-                            {vehicle.label}
+                        {OrderTypes.map((order) => (
+                          <option key={order.value} value={order.value}>
+                            {order.label}
                           </option>
                         ))}
                       </select>
                     </div>
-
-                    <InputField
-                      label="Vehicle No"
-                      value={form.VehicleNumber}
-                      placeholder="Example: CAB-1234"
-                      onChange={(value) => handleChange("VehicleNumber", value)}
-                    />
                   </div>
                 </section>
               </div>
@@ -1618,19 +1454,7 @@ export default function Payments() {
                       />
                     </div>
 
-                    <div className="my-5 border-t border-slate-200" />
-
                     <div className="space-y-3">
-                      <PriceRow
-                        title="Packages"
-                        value={formatPrice(packageTotal)}
-                      />
-
-                      <PriceRow
-                        title="Individual Services"
-                        value={formatPrice(serviceTotal)}
-                      />
-
                       <PriceRow
                         title="Subtotal"
                         value={formatPrice(subTotal)}
@@ -1695,7 +1519,7 @@ export default function Payments() {
                       type="submit"
                       disabled={
                         isSubmitting ||
-                        isPackagesLoading ||
+                        isFoodsLoading ||
                         selectedItems.length === 0
                       }
                       className="mt-5 inline-flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-amber-900 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-slate-300"
@@ -1784,10 +1608,6 @@ function PaymentDetailsModal({
 
         <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <DetailCard
-              label="Order Number"
-              value={payment.orderNumber || "-"}
-            />
 
             <DetailCard
               label="Order Date"
@@ -1806,25 +1626,13 @@ function PaymentDetailsModal({
 
             <DetailCard label="Phone" value={payment.customerPhone || "-"} />
 
-            <DetailCard label="Vehicle" value={payment.vehicleNumber || "-"} />
-
             <DetailCard
-              label="Vehicle Type"
-              value={getVehicleTypeName(payment.vehicleType)}
-            />
-
-            <DetailCard
-              label="Order Status"
-              value={getOrderStatusName(payment.carWashOrderStatus)}
-            />
-
-            <DetailCard
-              label="Payment Status"
-              value={payment.isPaid ? "Paid" : "Unpaid"}
+              label="Order Type"
+              value={getOrderTypeName(payment.orderType)}
             />
           </div>
 
-          {/* Packages */}
+          {/* Food items */}
 
           <div className="mt-6">
             <h3 className="font-bold text-slate-900">Foods</h3>
@@ -1834,42 +1642,19 @@ function PaymentDetailsModal({
             </p>
 
             <div className="mt-3 space-y-2">
-              {payment.packages?.length > 0 ? (
-                payment.packages.map((item) => (
+              {payment.orderItems?.length ? (
+                payment.orderItems.map((item) => (
                   <OrderItem
-                    key={item.carWashPackageId}
+                    key={item.menuId}
                     icon={<Coffee size={17} />}
-                    name={item.packageName}
-                    price={formatPrice(item.packagePrice)}
+                    name={item.menuName}
+                    price={formatPrice(
+                      item.price * item.quantity - item.discount,
+                    )}
                   />
                 ))
               ) : (
                 <SmallEmpty text="No foods added." />
-              )}
-            </div>
-          </div>
-
-          {/* Services */}
-
-          <div className="mt-6">
-            <h3 className="font-bold text-slate-900">Individual Services</h3>
-
-            <p className="mt-0.5 text-xs text-slate-500">
-              Individual services added to this payment.
-            </p>
-
-            <div className="mt-3 space-y-2">
-              {payment.services?.length > 0 ? (
-                payment.services.map((item) => (
-                  <OrderItem
-                    key={item.carWashServiceId}
-                    icon={<CarFront size={17} />}
-                    name={item.serviceName}
-                    price={formatPrice(item.servicePrice)}
-                  />
-                ))
-              ) : (
-                <SmallEmpty text="No individual services added." />
               )}
             </div>
           </div>
@@ -1917,120 +1702,6 @@ function PaymentDetailsModal({
     document.body,
   );
 }
-/* =========================================================
-   Package Information Modal
-   ========================================================= */
-
-function PackageInfoModal({
-  packageItem,
-  formatPrice,
-  onClose,
-}: {
-  packageItem: CarPackage;
-  formatPrice: (price: number) => string;
-  onClose: () => void;
-}) {
-  const normalPrice =
-    packageItem.pricesWithoutDiscounts > 0
-      ? packageItem.pricesWithoutDiscounts
-      : packageItem.services.reduce(
-          (total, service) => total + service.price,
-          0,
-        );
-
-  const savings = Math.max(normalPrice - packageItem.basPrice, 0);
-
-  return createPortal(
-    <div
-      className="fixed inset-0 z-[100000] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
-          onClose();
-        }
-      }}
-    >
-      <div className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-        <div className="flex items-start justify-between border-b border-slate-200 px-5 py-4 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-900 text-white">
-              <Package size={21} />
-            </div>
-
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">
-                {packageItem.title}
-              </h2>
-
-              <p className="text-sm text-slate-500">
-                Package information and included services.
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6">
-          <p className="text-sm leading-6 text-slate-600">
-            {packageItem.description}
-          </p>
-
-          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <MiniPriceCard
-              title="Separate Price"
-              value={formatPrice(normalPrice)}
-            />
-
-            <MiniPriceCard
-              title="Package Price"
-              value={formatPrice(packageItem.basPrice)}
-            />
-
-            <MiniPriceCard title="Savings" value={formatPrice(savings)} />
-          </div>
-
-          <div className="mt-6">
-            <h3 className="font-bold text-slate-900">Included Services</h3>
-
-            <div className="mt-3 space-y-3">
-              {packageItem.services.map((service, index) => (
-                <div
-                  key={service.id}
-                  className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 p-4"
-                >
-                  <div className="flex min-w-0 gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 font-bold text-amber-900">
-                      {index + 1}
-                    </div>
-
-                    <div>
-                      <p className="font-semibold text-slate-900">
-                        {service.name}
-                      </p>
-
-                    </div>
-                  </div>
-
-                  <span className="shrink-0 rounded-lg bg-emerald-50 px-3 py-1.5 text-sm font-bold text-emerald-700">
-                    {formatPrice(service.price)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>,
-    document.body,
-  );
-}
-
 /* =========================================================
    Small Components
    ========================================================= */
@@ -2359,16 +2030,6 @@ function OrderItem({
       <span className="shrink-0 text-sm font-bold text-emerald-700">
         {price}
       </span>
-    </div>
-  );
-}
-
-function MiniPriceCard({ title, value }: { title: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <p className="text-xs text-slate-500">{title}</p>
-
-      <p className="mt-1 text-lg font-bold text-slate-900">{value}</p>
     </div>
   );
 }

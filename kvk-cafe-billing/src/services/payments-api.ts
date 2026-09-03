@@ -2,7 +2,7 @@ import axios from "axios";
 import { getEnv } from "@/env";
 
 const { API_URL } = getEnv();
-const PAYMENTS_API_URL = `${API_URL}car-service/wash-order/`;
+const PAYMENTS_API_URL = `${API_URL}cafe/order/`;
 
 const getToken = () => {
     const cashier = localStorage.getItem("cashier")
@@ -12,13 +12,12 @@ const getToken = () => {
     return cashier ? cashier.token : null;
 };
 
-export const pay = async (paymentData: FormData) => {
+export const pay = async (paymentData: any) => {
     try {
         const token = getToken();
         const response = await axios.post(`${PAYMENTS_API_URL}`, paymentData, {
             headers: {
                 Authorization: `Bearer ${token}`,
-                "Content-Type": "multipart/form-data",
             },
         });
         return response.data;
