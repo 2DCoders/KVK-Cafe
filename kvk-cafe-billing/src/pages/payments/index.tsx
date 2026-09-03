@@ -49,10 +49,27 @@ type Food = {
 
 type PaymentOrderItem = {
   menuId: string;
-  menuName: string;
+  menuName?: string;
   quantity: number;
   price: number;
   discount: number;
+};
+
+type CafePaymentPayload = {
+  CustomerName: string;
+  CustomerPhone: string;
+  totalMinutesSpent: number;
+  isPaid: boolean;
+  paymentMethod: 1 | 2;
+  orderType: number;
+  remark: string;
+  address: string;
+  deliveryInstructions: string;
+  deliveryTime: string;
+  deliveryPerson: string;
+  deliveryPersonPhone: string;
+  tableNumber: string;
+  orderItems: PaymentOrderItem[];
 };
 
 type PaymentRecord = {
@@ -178,6 +195,7 @@ export default function Payments() {
 
   const [isFoodsLoading, setIsFoodsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingPayment, setPendingPayment] = useState<CafePaymentPayload | null>(null);
 
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
   const [selectorSearch, setSelectorSearch] = useState("");
@@ -546,7 +564,7 @@ export default function Payments() {
      Handle Pay
      ========================================================= */
 
-  const handlePay = async (paymentData: any) => {
+  const handlePay = async (paymentData: CafePaymentPayload) => {
     try {
       setIsSubmitting(true);
 
@@ -658,7 +676,7 @@ export default function Payments() {
       })),
     };
 
-    await handlePay(body);
+    setPendingPayment(body);
   };
 
   /* =========================================================
@@ -715,6 +733,20 @@ export default function Payments() {
           getPaymentMethodName={getPaymentMethodName}
           getOrderStatusName={getOrderStatusName}
           onClose={() => setSelectedPayment(null)}
+        />
+      )}
+
+      {pendingPayment && (
+        <PaymentConfirmationModal
+          payment={pendingPayment}
+          items={selectedItems}
+          total={discountedTotal}
+          formatPrice={formatPrice}
+          onCancel={() => setPendingPayment(null)}
+          onConfirm={async () => {
+            setPendingPayment(null);
+            await handlePay(pendingPayment);
+          }}
         />
       )}
 
@@ -1547,6 +1579,123 @@ export default function Payments() {
   );
 }
 
+function PaymentConfirmationModal({
+  payment,
+  items,
+  total,
+  formatPrice,
+  onCancel,
+  onConfirm,
+}: {
+  payment: CafePaymentPayload;
+  items: SelectedItem[];
+  total: number;
+  formatPrice: (price: number) => string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100000] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onCancel();
+      }}
+    >
+      <div className="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl">
+        <div className="flex items-start justify-between border-b border-slate-200 px-5 py-4 sm:px-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-900 text-white">
+              <ReceiptText size={21} />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">
+                Confirm Payment
+              </h2>
+              <p className="mt-0.5 text-sm text-slate-500">
+                Review this cafe order before submitting it.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+            aria-label="Cancel payment confirmation"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="space-y-4 p-5 sm:p-6">
+          <div className="grid grid-cols-2 gap-3">
+            <DetailCard label="Order Type" value={getOrderTypeName(payment.orderType)} />
+            <DetailCard
+              label="Payment Method"
+              value={payment.paymentMethod === 1 ? "Cash" : "Card"}
+            />
+          </div>
+
+          {(payment.CustomerName || payment.CustomerPhone) && (
+            <DetailCard
+              label="Customer"
+              value={[payment.CustomerName, payment.CustomerPhone]
+                .filter(Boolean)
+                .join(" - ")}
+            />
+          )}
+
+          <div>
+            <p className="mb-2 text-sm font-semibold text-slate-700">
+              Order Items
+            </p>
+            <div className="space-y-2">
+              {items.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2.5"
+                >
+                  <span className="min-w-0 truncate pr-3 text-sm font-medium text-slate-700">
+                    {item.name}
+                  </span>
+                  <span className="shrink-0 text-sm font-semibold text-slate-900">
+                    {formatPrice(item.price)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between border-t border-slate-200 pt-4">
+            <span className="font-bold text-slate-900">Total Payable</span>
+            <span className="text-xl font-bold text-emerald-700">
+              {formatPrice(total)}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-amber-900 px-5 text-sm font-semibold text-white hover:bg-amber-700"
+          >
+            <Check size={17} />
+            Confirm Payment
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 /* =========================================================
    Payment Details Modal
    ========================================================= */
@@ -1630,6 +1779,11 @@ function PaymentDetailsModal({
               label="Order Type"
               value={getOrderTypeName(payment.orderType)}
             />
+
+            <DetailCard
+              label="Order Status"
+              value={getOrderStatusName(payment.orderStatus ?? 1)}
+            />
           </div>
 
           {/* Food items */}
@@ -1647,7 +1801,7 @@ function PaymentDetailsModal({
                   <OrderItem
                     key={item.menuId}
                     icon={<Coffee size={17} />}
-                    name={item.menuName}
+                    name={item.menuName || item.menuId}
                     price={formatPrice(
                       item.price * item.quantity - item.discount,
                     )}
