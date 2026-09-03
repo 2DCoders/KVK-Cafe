@@ -276,7 +276,7 @@ export default function Payments() {
         variant: "error",
         title: "Unable to load payments",
         description:
-          "An error occurred while loading car wash payment records.",
+          "An error occurred while loading cafe payment records.",
       });
     } finally {
       setIsPaymentsLoading(false);
@@ -315,7 +315,7 @@ export default function Payments() {
         variant: "error",
         title: "Unable to load data",
         description:
-          "An error occurred while loading car wash packages and services.",
+          "An error occurred while loading cafe payment records.",
       });
     } finally {
       setIsPackagesLoading(false);
@@ -718,7 +718,7 @@ export default function Payments() {
         visible: true,
         variant: "success",
         title: "Payment successful",
-        description: "The car wash payment was added successfully.",
+        description: "The cafe payment was added successfully.",
       });
 
       resetPaymentForm();
@@ -909,17 +909,17 @@ export default function Payments() {
 
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-900 text-white shadow-sm shadow-blue-900/20">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#7A3E18] text-white shadow-sm shadow-amber-900/20">
                 <ReceiptText size={21} />
               </div>
 
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                  Car Wash Payments
+                  Cafe Payments
                 </h1>
 
                 <p className="text-sm text-slate-500">
-                  View and manage car wash orders and payments.
+                  View and manage cafe orders and payments.
                 </p>
               </div>
             </div>
@@ -927,13 +927,11 @@ export default function Payments() {
             <div className="flex flex-col gap-2 sm:flex-row">
               <button
                 type="button"
-                onClick={getAllPayments}
-                disabled={isPaymentsLoading}
-                className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-900 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => window.location.reload()}
+                className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-amber-900 hover:bg-amber-100 hover:text-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <RefreshCcw
                   size={16}
-                  className={isPaymentsLoading ? "animate-spin" : ""}
                 />
                 Refresh
               </button>
@@ -941,7 +939,7 @@ export default function Payments() {
               <button
                 type="button"
                 onClick={handleOpenAddPayment}
-                className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-900 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+                className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#7A3E18] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5A2E12]"
               >
                 <Plus size={17} />
                 Add Payment
@@ -956,14 +954,14 @@ export default function Payments() {
               title="Total Payments"
               value={String(payments.length)}
               icon={<ReceiptText size={20} />}
-              iconClassName="bg-blue-50 text-blue-900"
+              iconClassName="bg-amber-50 text-amber-900"
             />
 
             <SummaryCard
               title="Total Revenue"
               value={formatPrice(totalRevenue)}
               icon={<Banknote size={20} />}
-              iconClassName="bg-emerald-50 text-emerald-600"
+              iconClassName="bg-amber-50 text-amber-600"
             />
 
             <SummaryCard
@@ -977,7 +975,7 @@ export default function Payments() {
               title="Card Revenue"
               value={formatPrice(cardRevenue)}
               icon={<CreditCard size={20} />}
-              iconClassName="bg-violet-50 text-violet-600"
+              iconClassName="bg-amber-50 text-amber-600"
             />
           </div>
 
@@ -1001,7 +999,7 @@ export default function Payments() {
                     setCurrentPage(1);
                   }}
                   placeholder="Search order, customer, phone or vehicle..."
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-amber-500 focus:bg-white focus:ring-4 focus:ring-amber-100"
                 />
               </div>
 
@@ -1114,7 +1112,7 @@ export default function Payments() {
                               type="button"
                               onClick={() => setSelectedPayment(payment)}
                               title="View payment details"
-                              className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-blue-900 hover:bg-blue-50 hover:text-blue-700"
+                              className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-amber-900 hover:bg-amber-100 hover:text-amber-700"
                             >
                               <Eye size={17} />
                             </button>
@@ -1158,7 +1156,7 @@ export default function Payments() {
                         <button
                           type="button"
                           onClick={() => setSelectedPayment(payment)}
-                          className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white text-blue-900"
+                          className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white text-amber-900"
                         >
                           <Eye size={17} />
                         </button>
@@ -1237,7 +1235,7 @@ export default function Payments() {
                         setItemsPerPage(Number(event.target.value));
                         setCurrentPage(1);
                       }}
-                      className="h-9 cursor-pointer rounded-lg border border-slate-200 bg-white px-2 text-sm font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      className="h-9 cursor-pointer rounded-lg border border-slate-200 bg-white px-2 text-sm font-medium text-slate-700 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
                     >
                       <option value={5}>5</option>
                       <option value={10}>10</option>
@@ -1254,7 +1252,7 @@ export default function Payments() {
                       setCurrentPage((previous) => Math.max(previous - 1, 1))
                     }
                     disabled={currentPage === 1}
-                    className="inline-flex h-9 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-blue-900 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-9 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-amber-900 hover:bg-amber-100 hover:text-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Previous
                   </button>
@@ -1271,7 +1269,7 @@ export default function Payments() {
                       )
                     }
                     disabled={currentPage === totalPages}
-                    className="inline-flex h-9 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-blue-900 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-9 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-amber-900 hover:bg-amber-100 hover:text-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Next
                   </button>
@@ -1292,7 +1290,7 @@ export default function Payments() {
 
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-900 text-white shadow-sm shadow-blue-900/20">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-900 text-white shadow-sm shadow-amber-900/20">
                 <Banknote size={21} />
               </div>
 
@@ -1311,7 +1309,7 @@ export default function Payments() {
               type="button"
               onClick={handleBackToPayments}
               disabled={isSubmitting}
-              className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-900 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50"
+              className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-amber-900 hover:bg-amber-100 hover:text-amber-700 disabled:opacity-50"
             >
               <ArrowLeft size={17} />
               Back to Payments
@@ -1325,21 +1323,21 @@ export default function Payments() {
               title="Selected Items"
               value={String(selectedItems.length)}
               icon={<ShoppingCart size={20} />}
-              iconClassName="bg-blue-50 text-blue-900"
+              iconClassName="bg-amber-50 text-amber-900"
             />
 
             <SummaryCard
               title="Subtotal"
               value={formatPrice(subTotal)}
               icon={<Banknote size={20} />}
-              iconClassName="bg-emerald-50 text-emerald-600"
+              iconClassName="bg-amber-50 text-amber-900"
             />
 
             <SummaryCard
               title="Final Amount"
               value={formatPrice(discountedTotal)}
               icon={<Sparkles size={20} />}
-              iconClassName="bg-violet-50 text-violet-600"
+              iconClassName="bg-amber-50 text-amber-900"
             />
           </div>
 
@@ -1371,7 +1369,7 @@ export default function Payments() {
                         }
                         className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 rounded-xl border bg-white px-3.5 py-2.5 text-left transition ${
                           isSelectorOpen
-                            ? "border-blue-500 ring-4 ring-blue-100"
+                            ? "border-amber-500 ring-4 ring-amber-100"
                             : "border-slate-200 hover:border-slate-300"
                         }`}
                       >
@@ -1415,7 +1413,7 @@ export default function Payments() {
                                   setSelectorSearch(event.target.value)
                                 }
                                 placeholder="Search packages or services..."
-                                className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                                className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-amber-500 focus:bg-white focus:ring-4 focus:ring-amber-100"
                               />
                             </div>
                           </div>
@@ -1428,7 +1426,7 @@ export default function Payments() {
                                 <div className="flex items-center gap-2">
                                   <Package
                                     size={15}
-                                    className="text-blue-900"
+                                    className="text-amber-900"
                                   />
 
                                   <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -1436,7 +1434,7 @@ export default function Payments() {
                                   </span>
                                 </div>
 
-                                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-900">
+                                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-900">
                                   {filteredPackages.length}
                                 </span>
                               </div>
@@ -1472,7 +1470,7 @@ export default function Payments() {
                                 <div className="flex items-center gap-2">
                                   <CarFront
                                     size={15}
-                                    className="text-blue-900"
+                                    className="text-amber-900"
                                   />
 
                                   <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -1480,7 +1478,7 @@ export default function Payments() {
                                   </span>
                                 </div>
 
-                                <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-600">
+                                <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-600">
                                   {filteredServices.length}
                                 </span>
                               </div>
@@ -1548,7 +1546,7 @@ export default function Payments() {
                                   <div
                                     className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
                                       item.type === "package"
-                                        ? "bg-blue-100 text-blue-900"
+                                        ? "bg-amber-100 text-amber-900"
                                         : "bg-slate-200 text-slate-600"
                                     }`}
                                   >
@@ -1573,7 +1571,7 @@ export default function Payments() {
                                               selectedPackage,
                                             )
                                           }
-                                          className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md text-blue-700 hover:bg-blue-100"
+                                          className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md text-amber-700 hover:bg-amber-100"
                                         >
                                           <Info size={14} />
                                         </button>
@@ -1608,15 +1606,15 @@ export default function Payments() {
                       </div>
                     ) : (
                       <div className="mt-5 flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center">
-                        <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-slate-200 text-slate-500">
+                        <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-amber-200 text-amber-500">
                           <ShoppingCart size={20} />
                         </div>
 
-                        <p className="text-sm font-semibold text-slate-700">
+                        <p className="text-sm font-semibold text-amber-700">
                           No items selected
                         </p>
 
-                        <p className="mt-1 text-xs text-slate-500">
+                        <p className="mt-1 text-xs text-amber-500">
                           Select packages or services from the dropdown.
                         </p>
                       </div>
@@ -1664,7 +1662,7 @@ export default function Payments() {
                         onChange={(event) =>
                           handleChange("vehicleType", event.target.value)
                         }
-                        className="h-11 cursor-pointer w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                        className="h-11 cursor-pointer w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-100"
                       >
                         <option value="">Select vehicle type</option>
 
@@ -1762,7 +1760,7 @@ export default function Payments() {
                             handleChange("discount", event.target.value)
                           }
                           placeholder="0"
-                          className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-14 text-sm font-semibold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                          className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-14 text-sm font-semibold text-slate-900 outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-100"
                         />
 
                         <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">
@@ -1800,7 +1798,7 @@ export default function Payments() {
                         isPackagesLoading ||
                         selectedItems.length === 0
                       }
-                      className="mt-5 inline-flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-900 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                      className="mt-5 inline-flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-amber-900 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                     >
                       {isSubmitting ? (
                         <>
@@ -1858,7 +1856,7 @@ function PaymentDetailsModal({
 
         <div className="flex items-start justify-between border-b border-slate-200 px-5 py-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-900 text-white">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-900 text-white">
               <ReceiptText size={21} />
             </div>
 
@@ -2009,7 +2007,7 @@ function PaymentDetailsModal({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-blue-900 px-5 text-sm font-semibold text-white hover:bg-blue-700"
+            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-amber-900 px-5 text-sm font-semibold text-white hover:bg-amber-700"
           >
             Close
           </button>
@@ -2042,7 +2040,7 @@ function PackageSelectorItem({
   return (
     <div
       className={`flex items-center gap-3 border-b border-slate-100 px-4 py-3 ${
-        selected ? "bg-blue-50/70" : "hover:bg-slate-50"
+        selected ? "bg-amber-50/70" : "hover:bg-slate-50"
       }`}
     >
       <button
@@ -2053,7 +2051,7 @@ function PackageSelectorItem({
         <div
           className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
             selected
-              ? "border-blue-900 bg-blue-900 text-white"
+              ? "border-amber-900 bg-amber-900 text-white"
               : "border-slate-300 bg-white"
           }`}
         >
@@ -2096,7 +2094,7 @@ function PackageSelectorItem({
         type="button"
         onClick={onInfo}
         title="View included services"
-        className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-900 hover:bg-blue-100"
+        className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-amber-100 bg-amber-50 text-amber-900 hover:bg-amber-100"
       >
         <Info size={17} />
       </button>
@@ -2139,7 +2137,7 @@ function PackageInfoModal({
       <div className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
         <div className="flex items-start justify-between border-b border-slate-200 px-5 py-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-900 text-white">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-900 text-white">
               <Package size={21} />
             </div>
 
@@ -2192,7 +2190,7 @@ function PackageInfoModal({
                   className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 p-4"
                 >
                   <div className="flex min-w-0 gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 font-bold text-blue-900">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 font-bold text-amber-900">
                       {index + 1}
                     </div>
 
@@ -2236,7 +2234,7 @@ function SectionHeader({
 }) {
   return (
     <div className="flex items-center gap-3 border-b border-slate-200 px-5 py-4">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-900">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-900">
         {icon}
       </div>
 
@@ -2278,7 +2276,7 @@ function InputField({
         min={type === "number" ? 0 : undefined}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+        className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-amber-500 focus:ring-4 focus:ring-amber-100"
       />
     </div>
   );
@@ -2302,13 +2300,13 @@ function SelectorItem({
       type="button"
       onClick={onClick}
       className={`flex w-full cursor-pointer items-center gap-3 border-b border-slate-100 px-4 py-3 text-left ${
-        selected ? "bg-blue-50/70" : "hover:bg-slate-50"
+        selected ? "bg-amber-50/70" : "hover:bg-slate-50"
       }`}
     >
       <div
         className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
           selected
-            ? "border-blue-900 bg-blue-900 text-white"
+            ? "border-amber-900 bg-amber-900 text-white"
             : "border-slate-300 bg-white"
         }`}
       >
@@ -2347,19 +2345,19 @@ function PaymentMethodCard({
       onClick={onClick}
       className={`relative cursor-pointer rounded-xl border p-3 text-left ${
         selected
-          ? "border-blue-900 bg-blue-50 ring-1 ring-blue-900"
-          : "border-slate-200 bg-white hover:border-blue-300"
+          ? "border-amber-900 bg-amber-50 ring-1 ring-amber-900"
+          : "border-slate-200 bg-white hover:border-amber-300"
       }`}
     >
       {selected && (
-        <div className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-blue-900 text-white">
+        <div className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-900 text-white">
           <Check size={12} />
         </div>
       )}
 
       <div
         className={`mb-2 flex h-9 w-9 items-center justify-center rounded-lg ${
-          selected ? "bg-blue-900 text-white" : "bg-slate-100 text-slate-500"
+          selected ? "bg-amber-900 text-white" : "bg-slate-100 text-slate-500"
         }`}
       >
         {icon}
@@ -2497,7 +2495,7 @@ function OrderStatusBadge({
 
   if (status === 2) {
     return (
-      <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+      <span className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
         In Progress
       </span>
     );
@@ -2545,7 +2543,7 @@ function OrderItem({
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-900">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-900">
           {icon}
         </div>
 
@@ -2611,7 +2609,7 @@ function CustomAlert({
     success: "border-emerald-200 bg-emerald-50 text-emerald-800",
     error: "border-red-200 bg-red-50 text-red-800",
     warning: "border-amber-200 bg-amber-50 text-amber-800",
-    info: "border-blue-200 bg-blue-50 text-blue-800",
+    info: "border-amber-200 bg-amber-50 text-amber-800",
   };
 
   return (
