@@ -45,34 +45,34 @@ export default function Sidebar({
     ? JSON.parse(localStorage.getItem("cashier") as string)
     : null;
 
-  const handleGetDayEndData = async () => {
-    const today = new Date().toISOString().split("T")[0];
+  // const handleGetDayEndData = async () => {
+  //   const today = new Date().toISOString().split("T")[0];
 
-    try {
-      const res = await getDayEndData(today);
+  //   try {
+  //     const res = await getDayEndData(today);
 
-      if (res && res.length > 0) {
-        setIsDidDayEnd(true);
-        localStorage.setItem("dayEndData", JSON.stringify(res[0]));
-      } else {
-        setIsDidDayEnd(false);
-        localStorage.removeItem("dayEndData");
-      }
-    } catch (error) {
-      setIsDidDayEnd(false);
-      localStorage.removeItem("dayEndData");
-    }
-  };
+  //     if (res && res.length > 0) {
+  //       setIsDidDayEnd(true);
+  //       localStorage.setItem("dayEndData", JSON.stringify(res[0]));
+  //     } else {
+  //       setIsDidDayEnd(false);
+  //       localStorage.removeItem("dayEndData");
+  //     }
+  //   } catch (error) {
+  //     setIsDidDayEnd(false);
+  //     localStorage.removeItem("dayEndData");
+  //   }
+  // };
 
-  useEffect(() => {
-    handleGetDayEndData();
-  }, []);
+  // useEffect(() => {
+  //   handleGetDayEndData();
+  // }, []);
 
-  const canAccessMenu = (itemId: string) => {
-    if (isDidDayEnd) return true;
+  // const canAccessMenu = (itemId: string) => {
+  //   if (isDidDayEnd) return true;
 
-    return itemId === "dayend";
-  };
+  //   return itemId === "dayend";
+  // };
 
   const navItems: NavItem[] = [
     {
@@ -173,10 +173,10 @@ export default function Sidebar({
                 <div key={item.id}>
                   <button
                     onClick={() => {
-                      if (!canAccessMenu(item.id)) return;
+                      // if (!canAccessMenu(item.id)) return;
                       handleNavigation(item.path);
                     }}
-                    disabled={!canAccessMenu(item.id)}
+                    // disabled={!canAccessMenu(item.id)}
                     className={`${btnBase}
                       ${
                         active && !collapsed
@@ -185,9 +185,10 @@ export default function Sidebar({
                       }
                       cursor-pointer
                       ${
-                        !canAccessMenu(item.id)
-                          ? "opacity-50 cursor-not-allowed"
-                          : ""
+                        // !canAccessMenu(item.id)
+                          // ? "opacity-50 cursor-not-allowed"
+                          // : 
+                          ""
                       }
                     `}
                   >

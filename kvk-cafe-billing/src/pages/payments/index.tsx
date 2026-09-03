@@ -241,17 +241,17 @@ export default function Payments() {
     description: "",
   });
 
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
-  const dayendData = localStorage.getItem("dayEndData")
-    ? JSON.parse(localStorage.getItem("dayEndData") as string)
-    : null;
+  // const dayendData = localStorage.getItem("dayEndData")
+  //   ? JSON.parse(localStorage.getItem("dayEndData") as string)
+  //   : null;
 
-  useEffect(() => {
-    if (!dayendData) {
-      navigate("/dayend");
-    }
-  }, [dayendData]);
+  // useEffect(() => {
+  //   if (!dayendData) {
+  //     navigate("/dayend");
+  //   }
+  // }, [dayendData]);
 
   const selectorRef = useRef<HTMLDivElement | null>(null);
 

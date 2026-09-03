@@ -14,6 +14,7 @@ import {
   MoreVertical,
   Loader2,
   Eye,
+  RefreshCcw,
 } from "lucide-react";
 import { createPortal } from "react-dom";
 import {
@@ -871,7 +872,7 @@ export default function MenuPage() {
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-[#7A3E18] text-white shadow-sm">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#7A3E18] text-white shadow-sm">
               <Coffee size={22} />
             </div>
 
@@ -886,14 +887,25 @@ export default function MenuPage() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={openAddModal}
-            className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-[#7A3E18] px-5 text-sm font-semibold text-white shadow-sm transition hover:shadow-md"
-          >
-            <Plus size={18} />
-            Add Item
-          </button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-amber-900 hover:bg-amber-100 hover:text-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <RefreshCcw size={16} />
+              Refresh
+            </button>
+
+            <button
+              type="button"
+              onClick={openAddModal}
+              className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#7A3E18] px-5 text-sm font-semibold text-white shadow-sm transition hover:shadow-md"
+            >
+              <Plus size={18} />
+              Add Item
+            </button>
+          </div>
         </div>
 
         {/* =================================================
@@ -907,7 +919,7 @@ export default function MenuPage() {
               onClick={() => handleTabChange("coffee")}
               className={`flex h-12 cursor-pointer items-center justify-center gap-2 rounded-xl text-sm font-semibold transition ${
                 activeTab === "coffee"
-                  ? "bg-gradient-to-r from-amber-500 to-[#7A3E18] text-white shadow-sm"
+                  ? "bg-[#7A3E18] text-white shadow-sm"
                   : "text-[#6B422B] hover:bg-amber-50"
               }`}
             >
@@ -920,7 +932,7 @@ export default function MenuPage() {
               onClick={() => handleTabChange("meals")}
               className={`flex h-12 cursor-pointer items-center justify-center gap-2 rounded-xl text-sm font-semibold transition ${
                 activeTab === "meals"
-                  ? "bg-gradient-to-r from-amber-500 to-[#7A3E18] text-white shadow-sm"
+                  ? "bg-[#7A3E18] text-white shadow-sm"
                   : "text-[#6B422B] hover:bg-amber-50"
               }`}
             >
@@ -1006,7 +1018,12 @@ export default function MenuPage() {
               <div className="flex flex-col gap-4 border-t border-amber-100 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                   <p className="text-sm text-[#8A5A3C]">
-                    Showing <strong className="text-[#4A2410]">{showingFrom}</strong> to <strong className="text-[#4A2410]">{showingTo}</strong> of <strong className="text-[#4A2410]">{activeItems.length}</strong>
+                    Showing{" "}
+                    <strong className="text-[#4A2410]">{showingFrom}</strong> to{" "}
+                    <strong className="text-[#4A2410]">{showingTo}</strong> of{" "}
+                    <strong className="text-[#4A2410]">
+                      {activeItems.length}
+                    </strong>
                   </p>
 
                   <select
@@ -1081,7 +1098,12 @@ export default function MenuPage() {
               <div className="flex flex-col gap-4 border-t border-amber-100 bg-amber-50/30 px-4 py-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-[#8A5A3C]">
-                    Showing <strong className="text-[#4A2410]">{showingFrom}</strong> to <strong className="text-[#4A2410]">{showingTo}</strong> of <strong className="text-[#4A2410]">{activeItems.length}</strong>
+                    Showing{" "}
+                    <strong className="text-[#4A2410]">{showingFrom}</strong> to{" "}
+                    <strong className="text-[#4A2410]">{showingTo}</strong> of{" "}
+                    <strong className="text-[#4A2410]">
+                      {activeItems.length}
+                    </strong>
                   </p>
 
                   <select
@@ -1573,7 +1595,7 @@ export default function MenuPage() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="h-11 cursor-pointer rounded-xl bg-gradient-to-r from-amber-500 to-[#7A3E18] px-6 text-sm font-semibold text-white shadow-sm transition hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                    className="h-11 cursor-pointer rounded-xl bg-[#7A3E18] px-6 text-sm font-semibold text-white shadow-sm transition hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {editingId !== null ? "Update Item" : "Save Item"}
                   </button>
@@ -2399,7 +2421,7 @@ function DeleteMenuItemModal({
             type="button"
             onClick={onDelete}
             disabled={isSubmitting}
-            className="inline-flex h-11 cursor-pointer flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-[#7A3E18] text-sm font-semibold text-white shadow-sm transition hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-11 cursor-pointer flex-1 items-center justify-center gap-2 rounded-xl bg-[#7A3E18] text-sm font-semibold text-white shadow-sm transition hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? (
               <>
