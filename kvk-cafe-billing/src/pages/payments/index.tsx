@@ -31,6 +31,7 @@ import {
 } from "react";
 
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 
 /* =========================================================
   Cafe Menu Types
@@ -207,17 +208,17 @@ export default function Payments() {
     description: "",
   });
 
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
 
-  // const dayendData = localStorage.getItem("dayEndData")
-  //   ? JSON.parse(localStorage.getItem("dayEndData") as string)
-  //   : null;
+  const dayendData = localStorage.getItem("dayEndData")
+    ? JSON.parse(localStorage.getItem("dayEndData") as string)
+    : null;
 
-  // useEffect(() => {
-  //   if (!dayendData) {
-  //     navigate("/dayend");
-  //   }
-  // }, [dayendData]);
+  useEffect(() => {
+    if (!dayendData) {
+      navigate("/dayend");
+    }
+  }, [dayendData]);
 
   const selectorRef = useRef<HTMLDivElement | null>(null);
 

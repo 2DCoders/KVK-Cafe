@@ -23,6 +23,7 @@ import {
   getMenuItems,
   updateMenuItem,
 } from "@/services/cafe-menu-api";
+import { useNavigate } from "react-router-dom";
 
 type MenuTab = "coffee" | "meals";
 
@@ -167,9 +168,9 @@ export default function MenuPage() {
     null,
   );
 
-  const [deletingItem, setDeletingItem] = useState<CoffeeItem | MealItem | null>(
-    null,
-  );
+  const [deletingItem, setDeletingItem] = useState<
+    CoffeeItem | MealItem | null
+  >(null);
 
   const [pageAlert, setPageAlert] = useState<AlertState>({
     visible: false,
@@ -177,6 +178,18 @@ export default function MenuPage() {
     title: "",
     description: "",
   });
+
+  const navigate = useNavigate();
+
+  const dayendData = localStorage.getItem("dayEndData")
+    ? JSON.parse(localStorage.getItem("dayEndData") as string)
+    : null;
+
+  useEffect(() => {
+    if (!dayendData) {
+      navigate("/dayend");
+    }
+  }, [dayendData]);
 
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -197,7 +210,10 @@ export default function MenuPage() {
   }, [mealItems, search]);
 
   const paginatedCoffeeItems = useMemo(() => {
-    const totalPageCount = Math.max(1, Math.ceil(filteredCoffeeItems.length / itemsPerPage));
+    const totalPageCount = Math.max(
+      1,
+      Math.ceil(filteredCoffeeItems.length / itemsPerPage),
+    );
     if (currentPage > totalPageCount) {
       setCurrentPage(totalPageCount);
     }
@@ -207,7 +223,10 @@ export default function MenuPage() {
   }, [currentPage, filteredCoffeeItems, itemsPerPage]);
 
   const paginatedMealItems = useMemo(() => {
-    const totalPageCount = Math.max(1, Math.ceil(filteredMealItems.length / itemsPerPage));
+    const totalPageCount = Math.max(
+      1,
+      Math.ceil(filteredMealItems.length / itemsPerPage),
+    );
     if (currentPage > totalPageCount) {
       setCurrentPage(totalPageCount);
     }
@@ -217,15 +236,20 @@ export default function MenuPage() {
   }, [currentPage, filteredMealItems, itemsPerPage]);
 
   const totalPages =
-    (activeTab === "coffee" ? filteredCoffeeItems.length : filteredMealItems.length) === 0
+    (activeTab === "coffee"
+      ? filteredCoffeeItems.length
+      : filteredMealItems.length) === 0
       ? 1
       : Math.ceil(
-          (activeTab === "coffee" ? filteredCoffeeItems.length : filteredMealItems.length) /
-            itemsPerPage,
+          (activeTab === "coffee"
+            ? filteredCoffeeItems.length
+            : filteredMealItems.length) / itemsPerPage,
         );
 
-  const activeItems = activeTab === "coffee" ? filteredCoffeeItems : filteredMealItems;
-  const showingFrom = activeItems.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+  const activeItems =
+    activeTab === "coffee" ? filteredCoffeeItems : filteredMealItems;
+  const showingFrom =
+    activeItems.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
   const showingTo = Math.min(currentPage * itemsPerPage, activeItems.length);
 
   useEffect(() => {
@@ -1642,9 +1666,7 @@ function CustomAlert({
       <div className="min-w-0 flex-1">
         <p className="font-semibold">{alert.title}</p>
 
-        <p className="mt-1 text-sm opacity-80">
-          {alert.description}
-        </p>
+        <p className="mt-1 text-sm opacity-80">{alert.description}</p>
       </div>
 
       <button
@@ -2044,7 +2066,10 @@ function CoffeeMobileCards({
                   </p>
                 </div>
 
-                <div ref={openMenuId === item.id ? menuRef : null} className="relative">
+                <div
+                  ref={openMenuId === item.id ? menuRef : null}
+                  className="relative"
+                >
                   <button
                     type="button"
                     onMouseDown={(event) => {
@@ -2168,7 +2193,10 @@ function MealMobileCards({
                   </p>
                 </div>
 
-                <div ref={openMenuId === item.id ? menuRef : null} className="relative">
+                <div
+                  ref={openMenuId === item.id ? menuRef : null}
+                  className="relative"
+                >
                   <button
                     type="button"
                     onMouseDown={(event) => {
@@ -2303,7 +2331,9 @@ function ViewMenuItemModal({
             <p className="text-xs font-semibold uppercase tracking-wider text-[#A4775C]">
               {isMeal ? "Meal" : "Coffee"}
             </p>
-            <h2 className="mt-1 text-xl font-bold text-[#4A2410]">{item.name}</h2>
+            <h2 className="mt-1 text-xl font-bold text-[#4A2410]">
+              {item.name}
+            </h2>
           </div>
           <button
             type="button"
@@ -2331,17 +2361,23 @@ function ViewMenuItemModal({
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-xl bg-emerald-50 p-3">
               <p className="text-xs text-emerald-700">Price</p>
-              <p className="mt-1 font-bold text-emerald-800">LKR {item.price.toLocaleString()}</p>
+              <p className="mt-1 font-bold text-emerald-800">
+                LKR {item.price.toLocaleString()}
+              </p>
             </div>
             {isMeal ? (
               <>
                 <div className="rounded-xl bg-amber-50 p-3">
                   <p className="text-xs text-[#8A5A3C]">Preparation</p>
-                  <p className="mt-1 font-semibold text-[#4A2410]">{item.preparationTimeInMinutes} min</p>
+                  <p className="mt-1 font-semibold text-[#4A2410]">
+                    {item.preparationTimeInMinutes} min
+                  </p>
                 </div>
                 <div className="rounded-xl bg-amber-50 p-3">
                   <p className="text-xs text-[#8A5A3C]">Portion</p>
-                  <p className="mt-1 font-semibold text-[#4A2410]">{item.portionSize || "-"}</p>
+                  <p className="mt-1 font-semibold text-[#4A2410]">
+                    {item.portionSize || "-"}
+                  </p>
                 </div>
               </>
             ) : null}
@@ -2349,15 +2385,21 @@ function ViewMenuItemModal({
 
           {item.description && (
             <div>
-              <h3 className="text-sm font-semibold text-[#4A2410]">Description</h3>
-              <p className="mt-1 text-sm leading-6 text-[#79543C]">{item.description}</p>
+              <h3 className="text-sm font-semibold text-[#4A2410]">
+                Description
+              </h3>
+              <p className="mt-1 text-sm leading-6 text-[#79543C]">
+                {item.description}
+              </p>
             </div>
           )}
 
           {item.facts && (
             <div>
               <h3 className="text-sm font-semibold text-[#4A2410]">Facts</h3>
-              <p className="mt-1 text-sm leading-6 text-[#79543C]">{item.facts}</p>
+              <p className="mt-1 text-sm leading-6 text-[#79543C]">
+                {item.facts}
+              </p>
             </div>
           )}
 
@@ -2368,7 +2410,10 @@ function ViewMenuItemModal({
               </h3>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {itemTags.map((tag, index) => (
-                  <span key={`${tag}-${index}`} className="rounded-md bg-amber-50 px-2.5 py-1.5 text-xs text-[#7A3E18]">
+                  <span
+                    key={`${tag}-${index}`}
+                    className="rounded-md bg-amber-50 px-2.5 py-1.5 text-xs text-[#7A3E18]"
+                  >
                     {tag}
                   </span>
                 ))}
@@ -2403,7 +2448,9 @@ function DeleteMenuItemModal({
         <div className="mt-4 text-center">
           <h2 className="text-xl font-bold text-[#4A2410]">Delete Menu Item</h2>
           <p className="mt-2 text-sm leading-6 text-[#7B5B49]">
-            Are you sure you want to delete <strong className="text-[#4A2410]">{item.name}</strong>? This action cannot be undone.
+            Are you sure you want to delete{" "}
+            <strong className="text-[#4A2410]">{item.name}</strong>? This action
+            cannot be undone.
           </p>
         </div>
 
