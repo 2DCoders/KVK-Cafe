@@ -717,7 +717,7 @@ export default function Payments() {
         visible: true,
         variant: "warning",
         title: "Select an item",
-        description: "Please select at least one package or service.",
+        description: "Please select at least one food or drink.",
       });
 
       return;
@@ -1243,7 +1243,7 @@ export default function Payments() {
 
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                  Add Car Wash Payment
+                  Add Cafe Payment
                 </h1>
 
                 <p className="text-sm text-slate-500">
@@ -1515,7 +1515,7 @@ export default function Payments() {
                         </p>
 
                         <p className="mt-1 text-xs text-amber-500">
-                          Select packages or services from the dropdown.
+                          Select foods from the dropdown.
                         </p>
                       </div>
                     )}
@@ -1766,7 +1766,7 @@ function PaymentDetailsModal({
               </h2>
 
               <p className="mt-0.5 text-sm text-slate-500">
-                {payment.orderNumber || "Car wash order"}
+                {payment.orderNumber || "Cafe order"}
               </p>
             </div>
           </div>
@@ -1827,10 +1827,10 @@ function PaymentDetailsModal({
           {/* Packages */}
 
           <div className="mt-6">
-            <h3 className="font-bold text-slate-900">Packages</h3>
+            <h3 className="font-bold text-slate-900">Foods</h3>
 
             <p className="mt-0.5 text-xs text-slate-500">
-              Packages added to this payment.
+              Foods added to this payment.
             </p>
 
             <div className="mt-3 space-y-2">
@@ -1838,13 +1838,13 @@ function PaymentDetailsModal({
                 payment.packages.map((item) => (
                   <OrderItem
                     key={item.carWashPackageId}
-                    icon={<Package size={17} />}
+                    icon={<Coffee size={17} />}
                     name={item.packageName}
                     price={formatPrice(item.packagePrice)}
                   />
                 ))
               ) : (
-                <SmallEmpty text="No packages added." />
+                <SmallEmpty text="No foods added." />
               )}
             </div>
           </div>
@@ -1917,91 +1917,6 @@ function PaymentDetailsModal({
     document.body,
   );
 }
-
-/* =========================================================
-   Package Selector
-   ========================================================= */
-
-function PackageSelectorItem({
-  item,
-  selected,
-  formatPrice,
-  onSelect,
-  onInfo,
-}: {
-  item: CarPackage;
-  selected: boolean;
-  formatPrice: (price: number) => string;
-  onSelect: () => void;
-  onInfo: () => void;
-}) {
-  const savings = Math.max(item.pricesWithoutDiscounts - item.basPrice, 0);
-
-  return (
-    <div
-      className={`flex items-center gap-3 border-b border-slate-100 px-4 py-3 ${
-        selected ? "bg-amber-50/70" : "hover:bg-slate-50"
-      }`}
-    >
-      <button
-        type="button"
-        onClick={onSelect}
-        className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left"
-      >
-        <div
-          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
-            selected
-              ? "border-amber-900 bg-amber-900 text-white"
-              : "border-slate-300 bg-white"
-          }`}
-        >
-          {selected && <Check size={13} />}
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="truncate text-sm font-semibold text-slate-800">
-              {item.title}
-            </p>
-
-            {savings > 0 && (
-              <span className="hidden rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 sm:inline-flex">
-                Save {formatPrice(savings)}
-              </span>
-            )}
-          </div>
-
-          <p className="mt-0.5 text-xs text-slate-500">
-            {item.services.length} included service
-            {item.services.length !== 1 ? "s" : ""}
-          </p>
-        </div>
-
-        <div className="shrink-0 text-right">
-          <p className="text-sm font-bold text-emerald-600">
-            {formatPrice(item.basPrice)}
-          </p>
-
-          {item.pricesWithoutDiscounts > item.basPrice && (
-            <p className="text-[11px] text-slate-400 line-through">
-              {formatPrice(item.pricesWithoutDiscounts)}
-            </p>
-          )}
-        </div>
-      </button>
-
-      <button
-        type="button"
-        onClick={onInfo}
-        title="View included services"
-        className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-amber-100 bg-amber-50 text-amber-900 hover:bg-amber-100"
-      >
-        <Info size={17} />
-      </button>
-    </div>
-  );
-}
-
 /* =========================================================
    Package Information Modal
    ========================================================= */
@@ -2482,7 +2397,7 @@ function PaymentsEmptyState() {
       <h3 className="font-semibold text-slate-900">No payments found</h3>
 
       <p className="mt-1 max-w-sm text-sm text-slate-500">
-        No payments match the current search or no car wash payments have been
+        No payments match the current search or no cafe payments have been
         created yet.
       </p>
     </div>
