@@ -3,7 +3,6 @@ import Login from "./pages/login"
 import SettingsPage from "./pages/settings"
 import AdminLayout from "./layouts/admin-layout"
 import Dayend from "./pages/dayend"
-import Packages from "./pages/packages"
 import Payments from "./pages/payments"
 import MenuPage from "./pages/menu"
 
@@ -14,7 +13,6 @@ function App() {
       
       {/* Admin Dashboard Routes */}
       <Route element={<AdminLayout><MenuPage /></AdminLayout>} path="/menu" />
-      <Route element={<AdminLayout><Packages /></AdminLayout>} path="/packages" />
       <Route element={<AdminLayout><Payments /></AdminLayout>} path="/payments" />
       <Route element={<AdminLayout><Dayend /></AdminLayout>} path="/dayend" />
       <Route element={<AdminLayout><SettingsPage /></AdminLayout>} path="/settings" />

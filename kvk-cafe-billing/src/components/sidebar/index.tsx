@@ -5,7 +5,6 @@ import {
   Settings,
   ChevronDown,
   Coffee,
-  Boxes,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getDayEndData } from "@/services/day-end-api";
