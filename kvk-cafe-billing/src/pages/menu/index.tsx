@@ -697,6 +697,17 @@ export default function MenuPage() {
       return;
     }
 
+    if (!formData.image) {
+      setPageAlert({
+        visible: true,
+        variant: "warning",
+        title: "Image Required",
+        description: "Please upload an image for the menu item.",
+      });
+
+      return;
+    }
+
     if (activeTab === "meals" && !formData.portionSize.trim()) {
       setPageAlert({
         visible: true,
@@ -1511,7 +1522,7 @@ export default function MenuPage() {
                   ================================================= */}
 
                   <div>
-                    <FormField label="Image">
+                    <FormField label="Image" required>
                       <label className="group flex min-h-[280px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-amber-200 bg-amber-50/40 transition hover:border-amber-400 hover:bg-amber-50">
                         {formData.imagePreview ? (
                           <div className="relative h-full min-h-[280px] w-full">
