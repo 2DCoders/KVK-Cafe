@@ -1497,7 +1497,7 @@ export default function Payments() {
 
                     {/* Discount */}
 
-                    <div className="mt-5">
+                    {/* <div className="mt-5">
                       <label className="mb-1.5 block text-sm font-semibold text-slate-700">
                         Discount
                       </label>
@@ -1511,6 +1511,7 @@ export default function Payments() {
                         <input
                           type="number"
                           value={form.discount}
+                          disabled
                           min={0}
                           max={subTotal}
                           onChange={(event) =>
@@ -1524,7 +1525,7 @@ export default function Payments() {
                           LKR
                         </span>
                       </div>
-                    </div>
+                    </div> */}
 
                     {/* Total */}
 
