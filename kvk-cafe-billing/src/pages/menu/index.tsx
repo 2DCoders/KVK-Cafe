@@ -674,7 +674,7 @@ export default function MenuPage() {
       return;
     }
 
-    if (!formData.image) {
+    if (!formData.image && !formData.imagePreview) {
       setPageAlert({
         visible: true,
         variant: "warning",
@@ -685,12 +685,20 @@ export default function MenuPage() {
       return;
     }
 
-    if (activeTab === "meals" && !formData.portionSize.trim()) {
+    const portionSize = Number(formData.portionSize);
+
+    if (
+      activeTab === "meals" &&
+      (!formData.portionSize.trim() ||
+        !Number.isInteger(portionSize) ||
+        portionSize < 1 ||
+        portionSize > 4)
+    ) {
       setPageAlert({
         visible: true,
         variant: "warning",
         title: "Portion Required",
-        description: "Please enter the meal portion.",
+        description: "Please enter a whole number from 1 to 4.",
       });
 
       return;
@@ -1299,7 +1307,11 @@ export default function MenuPage() {
 
                               const number = Number(value);
 
-                              if (number >= 1 && number <= 4) {
+                              if (
+                                Number.isInteger(number) &&
+                                number >= 1 &&
+                                number <= 4
+                              ) {
                                 setFormData((prev) => ({
                                   ...prev,
                                   portionSize: value,
@@ -1508,7 +1520,10 @@ export default function MenuPage() {
                   ================================================= */}
 
                   <div>
-                    <FormField label="Image" required>
+                    <FormField
+                      label="Image"
+                      required={editingId === null || !formData.imagePreview}
+                    >
                       <label className="group flex min-h-[280px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-amber-200 bg-amber-50/40 transition hover:border-amber-400 hover:bg-amber-50">
                         {formData.imagePreview ? (
                           <div className="relative h-full min-h-[280px] w-full">
