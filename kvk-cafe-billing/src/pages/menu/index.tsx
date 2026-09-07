@@ -209,45 +209,22 @@ export default function MenuPage() {
     );
   }, [mealItems, search]);
 
-  const paginatedCoffeeItems = useMemo(() => {
-    const totalPageCount = Math.max(
-      1,
-      Math.ceil(filteredCoffeeItems.length / itemsPerPage),
-    );
-    if (currentPage > totalPageCount) {
-      setCurrentPage(totalPageCount);
-    }
-
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredCoffeeItems.slice(start, start + itemsPerPage);
-  }, [currentPage, filteredCoffeeItems, itemsPerPage]);
-
-  const paginatedMealItems = useMemo(() => {
-    const totalPageCount = Math.max(
-      1,
-      Math.ceil(filteredMealItems.length / itemsPerPage),
-    );
-    if (currentPage > totalPageCount) {
-      setCurrentPage(totalPageCount);
-    }
-
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredMealItems.slice(start, start + itemsPerPage);
-  }, [currentPage, filteredMealItems, itemsPerPage]);
-
-  const totalPages =
-    (activeTab === "coffee"
-      ? filteredCoffeeItems.length
-      : filteredMealItems.length) === 0
-      ? 1
-      : Math.ceil(
-          (activeTab === "coffee"
-            ? filteredCoffeeItems.length
-            : filteredMealItems.length) / itemsPerPage,
-        );
-
   const activeItems =
     activeTab === "coffee" ? filteredCoffeeItems : filteredMealItems;
+  const totalPages = Math.max(1, Math.ceil(activeItems.length / itemsPerPage));
+  const pageStart = (currentPage - 1) * itemsPerPage;
+  const paginatedCoffeeItems = useMemo(() => {
+    if (activeTab !== "coffee") return [];
+
+    return filteredCoffeeItems.slice(pageStart, pageStart + itemsPerPage);
+  }, [activeTab, filteredCoffeeItems, itemsPerPage, pageStart]);
+
+  const paginatedMealItems = useMemo(() => {
+    if (activeTab !== "meals") return [];
+
+    return filteredMealItems.slice(pageStart, pageStart + itemsPerPage);
+  }, [activeTab, filteredMealItems, itemsPerPage, pageStart]);
+
   const showingFrom =
     activeItems.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
   const showingTo = Math.min(currentPage * itemsPerPage, activeItems.length);
@@ -2518,7 +2495,7 @@ function PaginationButton({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="h-9 rounded-lg border border-amber-200 bg-white px-3 text-sm font-semibold text-[#6B422B] transition hover:border-amber-400 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
+      className="h-9 cursor-pointer rounded-lg border border-amber-200 bg-white px-3 text-sm font-semibold text-[#6B422B] transition hover:border-amber-400 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
     >
       {label}
     </button>
