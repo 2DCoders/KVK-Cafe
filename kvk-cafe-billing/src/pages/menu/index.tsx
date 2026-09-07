@@ -1281,23 +1281,32 @@ export default function MenuPage() {
                       {activeTab === "meals" && (
                         <FormField label="Portion" required>
                           <input
-                            type="text"
+                            type="number"
+                            min={1}
+                            max={4}
+                            step={1}
                             value={formData.portionSize}
-                            onChange={(e) =>
-                              setFormData((prev) => ({
-                                ...prev,
+                            onChange={(e) => {
+                              const value = e.target.value;
 
-                                /*
-                                 * FIX:
-                                 * was "portion"
-                                 *
-                                 * must be:
-                                 * "portionSize"
-                                 */
-                                portionSize: e.target.value,
-                              }))
-                            }
-                            placeholder="e.g. 1 person"
+                              if (value === "") {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  portionSize: "",
+                                }));
+                                return;
+                              }
+
+                              const number = Number(value);
+
+                              if (number >= 1 && number <= 4) {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  portionSize: value,
+                                }));
+                              }
+                            }}
+                            placeholder="e.g. 1 ( Max 4 )"
                             className={inputClass}
                           />
                         </FormField>
