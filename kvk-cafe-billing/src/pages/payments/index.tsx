@@ -3,7 +3,6 @@ import { getPayments, pay } from "@/services/payments-api";
 
 import {
   ArrowLeft,
-  BadgePercent,
   Banknote,
   Check,
   ChevronDown,
@@ -401,17 +400,10 @@ export default function Payments() {
     }
 
     return payments.filter((payment) => {
-      const itemNames = payment.orderItems
-        ?.map((item) => item.menuId)
-        .join(" ")
-        .toLowerCase();
-
       return (
         payment.orderNumber?.toLowerCase().includes(search) ||
         payment.customerName?.toLowerCase().includes(search) ||
-        payment.customerPhone?.toLowerCase().includes(search) ||
-        itemNames?.includes(search) ||
-        String(payment.discountedTotalAmount).includes(search)
+        payment.customerPhone?.toLowerCase().includes(search)
       );
     });
   }, [paymentSearch, payments]);
@@ -848,7 +840,7 @@ export default function Payments() {
                     setPaymentSearch(event.target.value);
                     setCurrentPage(1);
                   }}
-                  placeholder="Search order, customer, phone or food..."
+                  placeholder="Search order, customer, phone"
                   className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-amber-500 focus:bg-white focus:ring-4 focus:ring-amber-100"
                 />
               </div>
