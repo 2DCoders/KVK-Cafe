@@ -1862,9 +1862,9 @@ function MealTable({
 
           <th className={thClass}>Portion</th>
 
-          <th className={thClass}>Includes</th>
+          {/* <th className={thClass}>Includes</th> */}
 
-          <th className={thClass}>Description</th>
+          {/* <th className={thClass}>Description</th> */}
 
           <th className={`${thClass} text-right`}>Actions</th>
         </tr>
@@ -1919,7 +1919,7 @@ function MealTable({
               </span>
             </td>
 
-            <td className="max-w-xs px-5 py-4">
+            {/* <td className="max-w-xs px-5 py-4">
               <div className="flex flex-wrap gap-1.5">
                 {item.includes.slice(0, 3).map((include, index) => (
                   <span
@@ -1936,13 +1936,13 @@ function MealTable({
                   </span>
                 )}
               </div>
-            </td>
+            </td> */}
 
-            <td className="max-w-sm px-5 py-4">
+            {/* <td className="max-w-sm px-5 py-4">
               <p className="truncate text-sm text-[#79543C]">
                 {item.description || "—"}
               </p>
-            </td>
+            </td> */}
 
             <td className="relative px-5 py-4">
               <div
