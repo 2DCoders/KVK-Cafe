@@ -2331,8 +2331,12 @@ function ViewMenuItemModal({
   item: CoffeeItem | MealItem;
   onClose: () => void;
 }) {
-  const isMeal = "includes" in item;
-  const itemTags = isMeal ? item.includes : item.ingredients;
+  const isMeal = item.category === 1;
+  const mealItem = item as MealItem;
+  const coffeeItem = item as CoffeeItem;
+  const itemTags: string[] = isMeal
+    ? mealItem.includes
+    : coffeeItem.ingredients;
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#2D160A]/60 p-4 backdrop-blur-sm">
@@ -2381,13 +2385,13 @@ function ViewMenuItemModal({
                 <div className="rounded-xl bg-amber-50 p-3">
                   <p className="text-xs text-[#8A5A3C]">Preparation</p>
                   <p className="mt-1 font-semibold text-[#4A2410]">
-                    {item.preparationTimeInMinutes} min
+                    {mealItem.preparationTimeInMinutes} min
                   </p>
                 </div>
                 <div className="rounded-xl bg-amber-50 p-3">
                   <p className="text-xs text-[#8A5A3C]">Portion</p>
                   <p className="mt-1 font-semibold text-[#4A2410]">
-                    {item.portionSize || "-"}
+                    {mealItem.portionSize || "-"}
                   </p>
                 </div>
               </>
