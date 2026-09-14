@@ -707,13 +707,15 @@ export default function MenuPage() {
     if (
       activeTab === "meals" &&
       (!formData.preparationTimeInMinutes ||
-        Number(formData.preparationTimeInMinutes) < 0)
+        !Number.isInteger(Number(formData.preparationTimeInMinutes)) ||
+        Number(formData.preparationTimeInMinutes) < 0 ||
+        Number(formData.preparationTimeInMinutes) > 60)
     ) {
       setPageAlert({
         visible: true,
         variant: "warning",
         title: "Preparation Time Required",
-        description: "Please enter a valid preparation time.",
+        description: "Please enter a whole number from 0 to 60 minutes.",
       });
 
       return;
@@ -1495,14 +1497,33 @@ export default function MenuPage() {
                             <input
                               type="number"
                               min="0"
+                              max="60"
                               value={formData.preparationTimeInMinutes}
-                              onChange={(e) =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  preparationTimeInMinutes: e.target.value,
-                                }))
-                              }
-                              placeholder="e.g. 15"
+                              onChange={(e) => {
+                                const value = e.target.value;
+
+                                if (value === "") {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    preparationTimeInMinutes: "",
+                                  }));
+                                  return;
+                                }
+
+                                const number = Number(value);
+
+                                if (
+                                  Number.isInteger(number) &&
+                                  number >= 0 &&
+                                  number <= 60
+                                ) {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    preparationTimeInMinutes: value,
+                                  }));
+                                }
+                              }}
+                              placeholder="0 - 60"
                               className={`${inputClass} pl-10 pr-20`}
                             />
 
